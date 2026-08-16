@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedMemoriesRouteImport } from './routes/_authenticated/memories'
@@ -38,6 +39,11 @@ const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
@@ -74,6 +80,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/members': typeof AuthenticatedMembersRoute
   '/memories': typeof AuthenticatedMemoriesRoute
@@ -85,6 +92,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/members': typeof AuthenticatedMembersRoute
   '/memories': typeof AuthenticatedMemoriesRoute
@@ -98,6 +106,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/memories': typeof AuthenticatedMemoriesRoute
@@ -111,6 +120,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/live'
+    | '/admin'
     | '/chat'
     | '/members'
     | '/memories'
@@ -122,6 +132,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/live'
+    | '/admin'
     | '/chat'
     | '/members'
     | '/memories'
@@ -134,6 +145,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/live'
+    | '/_authenticated/admin'
     | '/_authenticated/chat'
     | '/_authenticated/members'
     | '/_authenticated/memories'
@@ -181,6 +193,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin': {
+      id: '/_authenticated/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/chat': {
       id: '/_authenticated/chat'
       path: '/chat'
@@ -227,6 +246,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedMemoriesRoute: typeof AuthenticatedMemoriesRoute
@@ -234,6 +254,7 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedMemoriesRoute: AuthenticatedMemoriesRoute,

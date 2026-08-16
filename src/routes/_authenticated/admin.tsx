@@ -175,7 +175,7 @@ function AdminPage() {
         </div>
         <div className="mt-2 space-y-1">
           {(allowed ?? []).map((a) => (
-            <p key={a.id} className="tamil text-[11px] text-muted-foreground">
+            <p key={a.phone} className="tamil text-[11px] text-muted-foreground">
               {a.full_name} — {a.phone}
             </p>
           ))}
