@@ -75,7 +75,7 @@ function TripDetail() {
           </div>
         </div>
         {trip?.description ? (
-          <p className="tamil mt-3 text-xs text-muted-foreground">{trip.description}</p>
+          <p className="tamil mt-3 text-xs text-muted-foreground">{trip.details}</p>
         ) : null}
       </GlassCard>
 
@@ -103,10 +103,10 @@ function TripDetail() {
           {(days ?? []).map((d) => (
             <div key={d.id} className="rounded-2xl border border-glass-border bg-secondary/25 p-3">
               <p className="tamil text-xs font-semibold text-primary">
-                Day {d.day_number} — {d.title}
+                Day {d.day_no} — {d.title}
               </p>
-              {d.details ? (
-                <p className="tamil mt-1 text-[11px] text-muted-foreground">{d.details}</p>
+              {d.description ? (
+                <p className="tamil mt-1 text-[11px] text-muted-foreground">{d.description}</p>
               ) : null}
             </div>
           ))}

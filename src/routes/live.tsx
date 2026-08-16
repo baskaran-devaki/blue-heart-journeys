@@ -44,7 +44,7 @@ function LivePage() {
           <>
             <div className="overflow-hidden rounded-2xl border border-glass-border">
               <iframe
-                src={embedUrl(live.youtube_url)}
+                src={embedUrl(live.stream_url)}
                 title="BLUE HEART GUYS Live"
                 allow="accelerometer; autoplay; encrypted-media; picture-in-picture"
                 allowFullScreen
