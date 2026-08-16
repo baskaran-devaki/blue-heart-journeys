@@ -74,7 +74,7 @@ function TripDetail() {
             </p>
           </div>
         </div>
-        {trip?.description ? (
+        {trip?.details ? (
           <p className="tamil mt-3 text-xs text-muted-foreground">{trip.details}</p>
         ) : null}
       </GlassCard>

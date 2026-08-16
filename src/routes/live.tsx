@@ -40,7 +40,7 @@ function LivePage() {
           title="LIVE TRIP"
           subtitle={trip?.name ?? "சூறாவளி சுற்றுப்பயணம்"}
         />
-        {live?.youtube_url ? (
+        {live?.stream_url ? (
           <>
             <div className="overflow-hidden rounded-2xl border border-glass-border">
               <iframe
