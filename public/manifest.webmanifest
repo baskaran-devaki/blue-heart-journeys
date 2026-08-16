@@ -1,0 +1,31 @@
+{
+  "name": "BLUE HEART GUYS – சூறாவளி சுற்றுப்பயணம்",
+  "short_name": "BLUE HEART GUYS",
+  "description": "Private friendship travel app of the BLUE HEART GUYS group – trips, memories, wallet, chat and live trip.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1024",
+  "theme_color": "#0a1024",
+  "icons": [
+    {
+      "src": "/icons/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
