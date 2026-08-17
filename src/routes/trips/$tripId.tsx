@@ -54,7 +54,7 @@ function TripDetail() {
           title={trip?.name ?? "பயணம்"}
           subtitle={trip?.destination ?? ""}
         />
-        <div className="grid grid-cols-2 gap-2 text-center">
+        <div className="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
           <div className="rounded-2xl bg-secondary/40 p-2">
             <p className="text-[10px] text-muted-foreground">தொடக்கம்</p>
             <p className="tamil text-xs font-semibold">{tamilDate(trip?.start_date)}</p>
