@@ -117,7 +117,7 @@ export function AppShell({
                 key={item.to}
                 to={item.to}
                 className={cn(
-                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[9px] leading-none font-medium transition-all xs:text-[10px]",
+                  "flex min-w-0 flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[9px] leading-none font-medium transition-all",
                   active ? "gradient-blue glow-sm text-primary-foreground" : "text-muted-foreground",
                 )}
               >
