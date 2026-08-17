@@ -153,11 +153,13 @@
 @layer base {
   * {
     border-color: var(--color-border);
+    min-width: 0;
   }
 
   html {
     -webkit-tap-highlight-color: transparent;
     scroll-behavior: smooth;
+    overflow-x: hidden;
   }
 
   body {
@@ -170,6 +172,24 @@
     color: var(--color-foreground);
     font-family: var(--font-display);
     overscroll-behavior-y: none;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  iframe,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    max-width: 100%;
+    font: inherit;
   }
 
   h1,
@@ -177,6 +197,14 @@
   h3 {
     font-family: var(--font-display);
     letter-spacing: -0.02em;
+    overflow-wrap: break-word;
+  }
+
+  p,
+  span,
+  a,
+  li {
+    overflow-wrap: break-word;
   }
 
   ::-webkit-scrollbar {
@@ -184,6 +212,7 @@
     height: 0;
   }
 }
+
 
 @utility tamil {
   font-family: var(--font-tamil);
