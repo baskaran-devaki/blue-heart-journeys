@@ -156,7 +156,7 @@ function ChatPage() {
 
   return (
     <AppShell showFooter={false}>
-      <GlassCard className="flex h-[calc(100vh-13rem)] flex-col">
+      <GlassCard className="flex h-[calc(100dvh-17rem)] min-h-[22rem] flex-col md:h-[calc(100dvh-13rem)]">
         <CardTitle
           icon="💬"
           title="MEMBERS CHAT"
