@@ -29,7 +29,7 @@ export const Route = createFileRoute("/")({
 });
 
 const SHORTCUTS = [
-  { to: "/memories", icon: Images, label: "📸 நினைவுகள்", hint: "Photos & Videos" },
+  { to: "/memories", icon: Images, label: "📸 Gallery", hint: "Photos & Videos" },
   { to: "/wallet", icon: Wallet, label: "💰 Wallet", hint: "Collection & Expenses" },
   { to: "/chat", icon: MessageCircle, label: "💬 Chat", hint: "Group realtime chat" },
   { to: "/members", icon: Users, label: "👥 Members", hint: "Confirm / Payment" },
