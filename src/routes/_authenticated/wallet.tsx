@@ -43,7 +43,7 @@ function WalletPage() {
           <p className="tamil text-[11px] opacity-80">Available Amount</p>
           <p className="text-3xl font-bold">{money(totals.balance)}</p>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        <div className="mt-3 grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
           <div className="rounded-2xl bg-secondary/40 p-2">
             <p className="text-[10px] text-muted-foreground">Total Collection</p>
             <p className="text-sm font-bold text-success">{money(totals.income)}</p>

@@ -152,7 +152,7 @@ function AdminPage() {
     <AppShell>
       <GlassCard>
         <CardTitle icon="📱" title="Approved Phones" subtitle="அனுமதிக்கப்பட்ட எண்கள்" />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
@@ -214,7 +214,7 @@ function AdminPage() {
 
       <GlassCard>
         <CardTitle icon="🧾" title="Add Expense" subtitle="செலவு பதிவு" />
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <input
             value={expense.amount}
             onChange={(e) => setExpense((s) => ({ ...s, amount: e.target.value }))}
@@ -248,7 +248,7 @@ function AdminPage() {
             நேரலையை நிறுத்து
           </button>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <input
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
