@@ -27,7 +27,7 @@ function TripsPage() {
     <AppShell>
       <GlassCard>
         <CardTitle icon="🗺" title="ALL TRIPS" subtitle="பயண வரலாறு" />
-        <div className="space-y-2">
+        <div className="grid gap-2 md:grid-cols-2">
           {(trips ?? []).length === 0 ? (
             <p className="tamil text-xs text-muted-foreground">இன்னும் பயணங்கள் இல்லை.</p>
           ) : null}

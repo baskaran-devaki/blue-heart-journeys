@@ -157,13 +157,13 @@ function AdminPage() {
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
             placeholder="+91XXXXXXXXXX"
-            className="flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
+            className="min-w-[9rem] flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
           />
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="பெயர்"
-            className="w-24 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
+            className="w-full min-w-0 sm:w-24 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
           />
           <button
             onClick={() => addPhone.mutate()}
@@ -173,9 +173,9 @@ function AdminPage() {
             Add
           </button>
         </div>
-        <div className="mt-2 space-y-1">
+        <div className="mt-2 grid gap-1 sm:grid-cols-2 lg:grid-cols-3">
           {(allowed ?? []).map((a) => (
-            <p key={a.phone} className="tamil text-[11px] text-muted-foreground">
+            <p key={a.phone} className="tamil truncate text-[11px] text-muted-foreground">
               {a.full_name} — {a.phone}
             </p>
           ))}
@@ -191,7 +191,7 @@ function AdminPage() {
           {pending.map((p) => (
             <div
               key={p.id}
-              className="flex items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
             >
               <div className="min-w-0">
                 <p className="tamil truncate text-xs font-semibold">
@@ -220,13 +220,13 @@ function AdminPage() {
             onChange={(e) => setExpense((s) => ({ ...s, amount: e.target.value }))}
             inputMode="numeric"
             placeholder="₹ தொகை"
-            className="w-24 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
+            className="w-full min-w-0 sm:w-24 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
           />
           <input
             value={expense.note}
             onChange={(e) => setExpense((s) => ({ ...s, note: e.target.value }))}
             placeholder="விவரம்"
-            className="flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
+            className="min-w-[9rem] flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
           />
           <button
             onClick={() => addExpense.mutate()}
@@ -253,7 +253,7 @@ function AdminPage() {
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
               placeholder="YouTube Live URL"
-              className="flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
+              className="min-w-[9rem] flex-1 rounded-2xl border border-glass-border bg-secondary/40 px-3 py-2 text-xs outline-none"
             />
             <button
               onClick={() => setLive.mutate("start")}

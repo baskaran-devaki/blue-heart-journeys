@@ -114,12 +114,12 @@ function MembersPage() {
                     <Clock className="size-3.5" /> Payment Verification Pending
                   </p>
                 ) : (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <input
                       value={utr}
                       onChange={(e) => setUtr(e.target.value)}
                       placeholder="UTR / Reference No"
-                      className="flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none"
+                      className="min-w-[10rem] flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none"
                     />
                     <button
                       onClick={() => submitUtr.mutate()}
@@ -135,7 +135,7 @@ function MembersPage() {
                 </p>
               </div>
             ) : (
-              <div className="mt-2 flex gap-2">
+              <div className="mt-2 flex flex-wrap gap-2">
                 <button
                   onClick={() => setStatus.mutate("confirmed")}
                   className="gradient-blue tamil flex-1 rounded-2xl py-2.5 text-xs font-semibold text-primary-foreground"
@@ -153,7 +153,7 @@ function MembersPage() {
           </div>
         ) : null}
 
-        <div className="space-y-2">
+        <div className="grid gap-2 md:grid-cols-2">
           {(profiles ?? []).map((m) => {
             const part = participation?.find((p) => p.user_id === m.id);
             const pay = (payments ?? []).filter((p) => p.user_id === m.id);
@@ -162,7 +162,7 @@ function MembersPage() {
             return (
               <div
                 key={m.id}
-                className="flex items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2.5"
+                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2.5"
               >
                 <div className="flex min-w-0 items-center gap-2">
                   <span

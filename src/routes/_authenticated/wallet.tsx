@@ -41,7 +41,7 @@ function WalletPage() {
         <CardTitle icon="💰" title="WALLET" subtitle="குழு நிதி நிலவரம்" />
         <div className="gradient-blue glow-sm rounded-3xl p-4 text-primary-foreground">
           <p className="tamil text-[11px] opacity-80">Available Amount</p>
-          <p className="text-3xl font-bold">{money(totals.balance)}</p>
+          <p className="text-2xl font-bold break-words sm:text-3xl">{money(totals.balance)}</p>
         </div>
         <div className="mt-3 grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
           <div className="rounded-2xl bg-secondary/40 p-2">
@@ -100,7 +100,7 @@ function WalletPage() {
           {(txns ?? []).map((t) => (
             <div
               key={t.id}
-              className="flex items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2.5"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2.5"
             >
               <div className="flex min-w-0 items-center gap-2">
                 {t.type === "income" ? (
