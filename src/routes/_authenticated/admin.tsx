@@ -150,6 +150,7 @@ function AdminPage() {
 
   return (
     <AppShell>
+      <div className="grid gap-4 xl:grid-cols-2 xl:items-start">
       <GlassCard>
         <CardTitle icon="📱" title="Approved Phones" subtitle="அனுமதிக்கப்பட்ட எண்கள்" />
         <div className="flex flex-wrap gap-2">
@@ -265,6 +266,7 @@ function AdminPage() {
           </div>
         )}
       </GlassCard>
+      </div>
     </AppShell>
   );
 }
