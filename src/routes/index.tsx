@@ -122,7 +122,7 @@ function HomePage() {
 
       <GlassCard>
         <CardTitle icon="💰" title="Wallet சுருக்கம்" subtitle="மொத்த நிலவரம்" />
-        <div className="grid grid-cols-3 gap-2 text-center">
+        <div className="grid grid-cols-1 gap-2 text-center sm:grid-cols-3">
           <div className="rounded-2xl bg-secondary/40 p-2">
             <p className="text-[10px] text-muted-foreground">Collection</p>
             <p className="text-sm font-bold text-success">{money(totals.income)}</p>
@@ -138,7 +138,7 @@ function HomePage() {
         </div>
       </GlassCard>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         {SHORTCUTS.map((s) => (
           <Link key={s.to} to={s.to}>
             <GlassCard className="h-full">

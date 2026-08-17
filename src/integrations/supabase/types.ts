@@ -647,6 +647,7 @@ export type Database = {
     }
     Functions: {
       bootstrap_me: { Args: { _full_name: string }; Returns: string }
+      current_email: { Args: never; Returns: string }
       current_phone: { Args: never; Returns: string }
       has_role: {
         Args: {

@@ -153,7 +153,7 @@ function MemoriesPage() {
             இன்னும் {tab === "photo" ? "படங்கள்" : "வீடியோக்கள்"} இல்லை. Upload செய்யுங்கள் 💙
           </p>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
             {shown.map((item) => {
               const url = (urls as Record<string, string> | undefined)?.[item.storage_path];
               const owner = profiles?.find((p) => p.id === item.user_id)?.full_name ?? "Member";
