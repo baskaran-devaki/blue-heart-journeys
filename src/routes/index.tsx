@@ -77,7 +77,7 @@ function HomePage() {
   }
 
   return (
-    <AppShell>
+    <AppShell showFooter>
       <p className="tamil px-1 text-xs text-muted-foreground">
         வணக்கம், <span className="font-semibold text-foreground">{profile?.full_name}</span> 💙
       </p>
