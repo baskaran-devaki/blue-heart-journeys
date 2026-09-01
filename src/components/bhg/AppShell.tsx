@@ -31,7 +31,7 @@ const NAV = [
   { to: "/members", label: "Members", icon: Users },
 ] as const;
 
-function Avatar({ name, url }: { name: string; url?: string | null }) {
+function Avatar({ name, url }: { name: string; url: string | null | undefined }) {
   if (url) {
     return (
       <img

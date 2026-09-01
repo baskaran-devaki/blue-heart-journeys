@@ -8,7 +8,7 @@ import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { currentTripQuery, participationQuery, paymentsQuery, profilesQuery } from "@/lib/queries";
-import { money, upiLink, UPI_ID } from "@/lib/bhg";
+import { money, tamilDate, upiLink, UPI_ID } from "@/lib/bhg";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/members")({
@@ -153,7 +153,7 @@ function MembersPage() {
           </div>
         ) : null}
 
-        <div className="grid gap-2 md:grid-cols-2">
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {(profiles ?? []).map((m) => {
             const part = participation?.find((p) => p.user_id === m.id);
             const pay = (payments ?? []).filter((p) => p.user_id === m.id);
@@ -162,18 +162,40 @@ function MembersPage() {
             return (
               <div
                 key={m.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2.5"
+                className="rounded-2xl border border-glass-border bg-secondary/25 p-3"
               >
-                <div className="flex min-w-0 items-center gap-2">
-                  <span
-                    className={cn(
-                      "size-2 shrink-0 rounded-full",
-                      online(m.last_seen) ? "bg-success" : "bg-muted-foreground/40",
-                    )}
-                  />
-                  <p className="tamil truncate text-sm">{m.full_name}</p>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  {m.avatar_url ? (
+                    <img
+                      src={m.avatar_url}
+                      alt={m.full_name}
+                      className="size-10 shrink-0 rounded-full border border-glass-border object-cover"
+                    />
+                  ) : (
+                    <span className="gradient-blue grid size-10 shrink-0 place-items-center rounded-full text-xs font-bold text-primary-foreground">
+                      {(m.full_name || "B").charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0 flex-1">
+                    <p className="tamil flex items-center gap-1.5 truncate text-sm font-semibold">
+                      <span
+                        className={cn(
+                          "size-2 shrink-0 rounded-full",
+                          online(m.last_seen) ? "bg-success" : "bg-muted-foreground/40",
+                        )}
+                      />
+                      {m.full_name}
+                    </p>
+                    <p className="truncate text-[10px] text-muted-foreground">{m.email || "—"}</p>
+                  </div>
                 </div>
-                <span className="tamil shrink-0 text-[11px]">
+                <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] text-muted-foreground">
+                  <p className="truncate">📞 {m.phone || "—"}</p>
+                  <p className="truncate">🩸 {m.blood_group || "—"}</p>
+                  <p className="truncate">🎂 {m.dob ? tamilDate(m.dob) : "—"}</p>
+                  <p className="truncate">📍 {m.address || "—"}</p>
+                </div>
+                <span className="tamil mt-2 block text-[11px]">
                   {verified ? (
                     <span className="text-success">✅ Payment Done</span>
                   ) : pending ? (

@@ -6,9 +6,14 @@ export type MemberStatus = "loading" | "anonymous" | "not_approved" | "member" |
 
 export type Profile = {
   id: string;
+  email: string;
   phone: string;
   full_name: string;
   avatar_url: string | null;
+  dob: string | null;
+  blood_group: string;
+  address: string;
+  active: boolean;
 };
 
 type AuthValue = {
@@ -39,7 +44,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (role === "admin" || role === "member") {
       const { data } = await supabase
         .from("profiles")
-        .select("id, phone, full_name, avatar_url")
+        .select("id, email, phone, full_name, avatar_url, dob, blood_group, address, active")
         .eq("id", current.user.id)
         .maybeSingle();
       setProfile(data ?? null);

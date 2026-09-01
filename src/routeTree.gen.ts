@@ -13,10 +13,12 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedMembersRouteImport } from './routes/_authenticated/members'
 import { Route as AuthenticatedMemoriesRouteImport } from './routes/_authenticated/memories'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedWalletRouteImport } from './routes/_authenticated/wallet'
 import { Route as TripsIndexRouteImport } from './routes/trips/index'
 import { Route as TripsTripIdRouteImport } from './routes/trips/$tripId'
@@ -40,6 +42,11 @@ const LiveRoute = LiveRouteImport.update({
   path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -58,6 +65,11 @@ const AuthenticatedMembersRoute = AuthenticatedMembersRouteImport.update({
 const AuthenticatedMemoriesRoute = AuthenticatedMemoriesRouteImport.update({
   id: '/memories',
   path: '/memories',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedWalletRoute = AuthenticatedWalletRouteImport.update({
@@ -80,10 +92,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/members': typeof AuthenticatedMembersRoute
   '/memories': typeof AuthenticatedMemoriesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/': typeof TripsIndexRoute
@@ -92,10 +106,12 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/chat': typeof AuthenticatedChatRoute
   '/members': typeof AuthenticatedMembersRoute
   '/memories': typeof AuthenticatedMemoriesRoute
+  '/settings': typeof AuthenticatedSettingsRoute
   '/wallet': typeof AuthenticatedWalletRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips': typeof TripsIndexRoute
@@ -106,10 +122,12 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/live': typeof LiveRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/members': typeof AuthenticatedMembersRoute
   '/_authenticated/memories': typeof AuthenticatedMemoriesRoute
+  '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/wallet': typeof AuthenticatedWalletRoute
   '/trips/$tripId': typeof TripsTripIdRoute
   '/trips/': typeof TripsIndexRoute
@@ -120,10 +138,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/live'
+    | '/reset-password'
     | '/admin'
     | '/chat'
     | '/members'
     | '/memories'
+    | '/settings'
     | '/wallet'
     | '/trips/$tripId'
     | '/trips/'
@@ -132,10 +152,12 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/live'
+    | '/reset-password'
     | '/admin'
     | '/chat'
     | '/members'
     | '/memories'
+    | '/settings'
     | '/wallet'
     | '/trips/$tripId'
     | '/trips'
@@ -145,10 +167,12 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/live'
+    | '/reset-password'
     | '/_authenticated/admin'
     | '/_authenticated/chat'
     | '/_authenticated/members'
     | '/_authenticated/memories'
+    | '/_authenticated/settings'
     | '/_authenticated/wallet'
     | '/trips/$tripId'
     | '/trips/'
@@ -159,6 +183,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   LiveRoute: typeof LiveRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   TripsTripIdRoute: typeof TripsTripIdRoute
   TripsIndexRoute: typeof TripsIndexRoute
 }
@@ -193,6 +218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/admin': {
       id: '/_authenticated/admin'
       path: '/admin'
@@ -219,6 +251,13 @@ declare module '@tanstack/react-router' {
       path: '/memories'
       fullPath: '/memories'
       preLoaderRoute: typeof AuthenticatedMemoriesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/wallet': {
@@ -250,6 +289,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedMembersRoute: typeof AuthenticatedMembersRoute
   AuthenticatedMemoriesRoute: typeof AuthenticatedMemoriesRoute
+  AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedWalletRoute: typeof AuthenticatedWalletRoute
 }
 
@@ -258,6 +298,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedMembersRoute: AuthenticatedMembersRoute,
   AuthenticatedMemoriesRoute: AuthenticatedMemoriesRoute,
+  AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedWalletRoute: AuthenticatedWalletRoute,
 }
 
@@ -269,6 +310,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   LiveRoute: LiveRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   TripsTripIdRoute: TripsTripIdRoute,
   TripsIndexRoute: TripsIndexRoute,
 }
