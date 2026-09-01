@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, Camera, KeyRound } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
+import { provisionMemberAccount } from "@/lib/members.functions";
 import {
   activeLiveQuery,
   allTripsQuery,
@@ -51,6 +53,7 @@ type MemberForm = {
   address: string;
   role: "member" | "admin";
   active: boolean;
+  avatar_url: string;
 };
 
 const emptyMember: MemberForm = {
@@ -62,6 +65,7 @@ const emptyMember: MemberForm = {
   address: "",
   role: "member",
   active: true,
+  avatar_url: "",
 };
 
 type TripForm = {
@@ -120,6 +124,13 @@ function AdminPage() {
   const [member, setMember] = useState<MemberForm>(emptyMember);
   const [tripForm, setTripForm] = useState<TripForm>(emptyTrip);
   const [streamUrl, setStreamUrl] = useState("");
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [payEdit, setPayEdit] = useState<{
+    id: string;
+    amount: string;
+    utr: string;
+    status: "pending" | "verified" | "rejected";
+  } | null>(null);
   const [expense, setExpense] = useState({
     id: "",
     title: "",
@@ -128,6 +139,8 @@ function AdminPage() {
     note: "",
     trip_id: "",
   });
+
+  const provision = useServerFn(provisionMemberAccount);
 
   const saveMember = useMutation({
     mutationFn: async () => {
@@ -140,6 +153,7 @@ function AdminPage() {
         address: member.address.trim(),
         role: member.role,
         active: member.active,
+        avatar_url: member.avatar_url.trim() || null,
         invited_at: new Date().toISOString(),
       };
       if (member.id) {
@@ -149,11 +163,34 @@ function AdminPage() {
         const { error } = await supabase.from("member_invites").insert(row);
         if (error) throw error;
       }
+      // keep an existing profile in sync (photo / details)
+      await supabase
+        .from("profiles")
+        .update({
+          full_name: row.full_name,
+          phone: row.phone,
+          dob: row.dob,
+          blood_group: row.blood_group,
+          address: row.address,
+          active: row.active,
+          ...(row.avatar_url ? { avatar_url: row.avatar_url } : {}),
+        })
+        .eq("email", row.email);
+      // create the login account – mobile number is the initial password
+      const res = await provision({
+        data: { email: row.email, phone: row.phone, full_name: row.full_name },
+      });
+      return res;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       setMember(emptyMember);
       void qc.invalidateQueries({ queryKey: ["member_invites"] });
-      toast.success("உறுப்பினர் சேமிக்கப்பட்டது ✅");
+      void qc.invalidateQueries({ queryKey: ["profiles"] });
+      toast.success(
+        res?.created
+          ? "உறுப்பினர் சேமிக்கப்பட்டது ✅ Login: email + கைபேசி எண் (password)"
+          : "உறுப்பினர் சேமிக்கப்பட்டது ✅",
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -166,6 +203,67 @@ function AdminPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["member_invites"] });
       toast.success("நீக்கப்பட்டது");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: async (m: { email: string; phone: string }) =>
+      provision({ data: { email: m.email, phone: m.phone, resetPassword: true } }),
+    onSuccess: () => toast.success("Password கைபேசி எண்ணுக்கு மீட்டமைக்கப்பட்டது 🔐"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const uploadMemberPhoto = useMutation({
+    mutationFn: async (file: File) => {
+      const safe = file.name.replace(/[^\w.-]/g, "");
+      const path = `member-photos/${Date.now()}-${safe}`;
+      const { error } = await supabase.storage.from("memories").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = await supabase.storage
+        .from("memories")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      return data?.signedUrl ?? "";
+    },
+    onSuccess: (url) => {
+      if (!url) return;
+      setMember((prev) => ({ ...prev, avatar_url: url }));
+      toast.success("புகைப்படம் ஏற்றப்பட்டது – சேமி அழுத்துங்கள்");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const savePayment = useMutation({
+    mutationFn: async (p: {
+      id: string;
+      amount: string;
+      utr: string;
+      status: "pending" | "verified" | "rejected";
+    }) => {
+      const { error } = await supabase
+        .from("payments")
+        .update({ amount: Number(p.amount || 0), utr: p.utr.trim(), status: p.status })
+        .eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setPayEdit(null);
+      void qc.invalidateQueries({ queryKey: ["payments"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      toast.success("Payment புதுப்பிக்கப்பட்டது ✅");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePayment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("payments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["payments"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      toast.success("Payment நீக்கப்பட்டது");
     },
     onError: (e: Error) => toast.error(e.message),
   });
