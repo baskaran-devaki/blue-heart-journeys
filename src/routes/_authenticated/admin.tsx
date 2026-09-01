@@ -843,6 +843,122 @@ function AdminPage() {
               </div>
             ))}
           </div>
+
+          <div className="mt-5 border-t border-glass-border pt-4">
+            <CardTitle
+              icon="📜"
+              title="Payment History"
+              subtitle={`${(payments ?? []).length} entries • verified பணம் இங்கே பட்டியலாகும்`}
+            />
+            <div className="grid gap-2 lg:grid-cols-2">
+              {(payments ?? []).map((p) => {
+                const name =
+                  profiles?.find((x) => x.id === p.user_id)?.full_name ?? "Member";
+                const editing = payEdit?.id === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
+                  >
+                    {editing ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input
+                          className={field}
+                          inputMode="numeric"
+                          value={payEdit.amount}
+                          onChange={(e) => setPayEdit({ ...payEdit, amount: e.target.value })}
+                          placeholder="₹ தொகை"
+                        />
+                        <input
+                          className={field}
+                          value={payEdit.utr}
+                          onChange={(e) => setPayEdit({ ...payEdit, utr: e.target.value })}
+                          placeholder="UTR"
+                        />
+                        <select
+                          className={field}
+                          value={payEdit.status}
+                          onChange={(e) =>
+                            setPayEdit({
+                              ...payEdit,
+                              status: e.target.value as "pending" | "verified" | "rejected",
+                            })
+                          }
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="verified">Verified</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => savePayment.mutate(payEdit)}
+                            className="gradient-blue tamil flex-1 rounded-2xl py-2 text-[11px] font-semibold text-primary-foreground"
+                          >
+                            சேமி
+                          </button>
+                          <button
+                            onClick={() => setPayEdit(null)}
+                            className="tamil rounded-2xl border border-glass-border px-3 text-[11px]"
+                          >
+                            ரத்து
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="tamil truncate text-xs font-semibold">{name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {money(Number(p.amount))} • UTR {p.utr || "—"} •{" "}
+                            {tamilDate(p.verified_at ?? p.created_at)}
+                          </p>
+                          <p
+                            className={cn(
+                              "text-[10px] font-semibold",
+                              p.status === "verified"
+                                ? "text-success"
+                                : p.status === "rejected"
+                                  ? "text-destructive"
+                                  : "text-warning",
+                            )}
+                          >
+                            {p.status === "verified"
+                              ? "✅ Verified"
+                              : p.status === "rejected"
+                                ? "❌ Rejected"
+                                : "⏳ Pending"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            onClick={() =>
+                              setPayEdit({
+                                id: p.id,
+                                amount: String(p.amount ?? ""),
+                                utr: p.utr ?? "",
+                                status: p.status as "pending" | "verified" | "rejected",
+                              })
+                            }
+                            className="grid size-8 place-items-center rounded-full border border-glass-border text-primary"
+                            aria-label="Edit payment"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deletePayment.mutate(p.id)}
+                            className="grid size-8 place-items-center rounded-full border border-glass-border text-destructive"
+                            aria-label="Delete payment"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         </GlassCard>
       ) : null}
 
