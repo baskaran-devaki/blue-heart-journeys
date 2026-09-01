@@ -1,12 +1,14 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, Pencil, Check } from "lucide-react";
+import { Plus, Trash2, Pencil, Check, Camera, KeyRound } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
+import { provisionMemberAccount } from "@/lib/members.functions";
 import {
   activeLiveQuery,
   allTripsQuery,
@@ -51,6 +53,7 @@ type MemberForm = {
   address: string;
   role: "member" | "admin";
   active: boolean;
+  avatar_url: string;
 };
 
 const emptyMember: MemberForm = {
@@ -62,6 +65,7 @@ const emptyMember: MemberForm = {
   address: "",
   role: "member",
   active: true,
+  avatar_url: "",
 };
 
 type TripForm = {
@@ -120,6 +124,13 @@ function AdminPage() {
   const [member, setMember] = useState<MemberForm>(emptyMember);
   const [tripForm, setTripForm] = useState<TripForm>(emptyTrip);
   const [streamUrl, setStreamUrl] = useState("");
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [payEdit, setPayEdit] = useState<{
+    id: string;
+    amount: string;
+    utr: string;
+    status: "pending" | "verified" | "rejected";
+  } | null>(null);
   const [expense, setExpense] = useState({
     id: "",
     title: "",
@@ -128,6 +139,8 @@ function AdminPage() {
     note: "",
     trip_id: "",
   });
+
+  const provision = useServerFn(provisionMemberAccount);
 
   const saveMember = useMutation({
     mutationFn: async () => {
@@ -140,6 +153,7 @@ function AdminPage() {
         address: member.address.trim(),
         role: member.role,
         active: member.active,
+        avatar_url: member.avatar_url.trim() || null,
         invited_at: new Date().toISOString(),
       };
       if (member.id) {
@@ -149,11 +163,34 @@ function AdminPage() {
         const { error } = await supabase.from("member_invites").insert(row);
         if (error) throw error;
       }
+      // keep an existing profile in sync (photo / details)
+      await supabase
+        .from("profiles")
+        .update({
+          full_name: row.full_name,
+          phone: row.phone,
+          dob: row.dob,
+          blood_group: row.blood_group,
+          address: row.address,
+          active: row.active,
+          ...(row.avatar_url ? { avatar_url: row.avatar_url } : {}),
+        })
+        .eq("email", row.email);
+      // create the login account – mobile number is the initial password
+      const res = await provision({
+        data: { email: row.email, phone: row.phone, full_name: row.full_name },
+      });
+      return res;
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
       setMember(emptyMember);
       void qc.invalidateQueries({ queryKey: ["member_invites"] });
-      toast.success("உறுப்பினர் சேமிக்கப்பட்டது ✅");
+      void qc.invalidateQueries({ queryKey: ["profiles"] });
+      toast.success(
+        res?.created
+          ? "உறுப்பினர் சேமிக்கப்பட்டது ✅ Login: email + கைபேசி எண் (password)"
+          : "உறுப்பினர் சேமிக்கப்பட்டது ✅",
+      );
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -166,6 +203,67 @@ function AdminPage() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["member_invites"] });
       toast.success("நீக்கப்பட்டது");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const resetPassword = useMutation({
+    mutationFn: async (m: { email: string; phone: string }) =>
+      provision({ data: { email: m.email, phone: m.phone, resetPassword: true } }),
+    onSuccess: () => toast.success("Password கைபேசி எண்ணுக்கு மீட்டமைக்கப்பட்டது 🔐"),
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const uploadMemberPhoto = useMutation({
+    mutationFn: async (file: File) => {
+      const safe = file.name.replace(/[^\w.-]/g, "");
+      const path = `member-photos/${Date.now()}-${safe}`;
+      const { error } = await supabase.storage.from("memories").upload(path, file, { upsert: true });
+      if (error) throw error;
+      const { data } = await supabase.storage
+        .from("memories")
+        .createSignedUrl(path, 60 * 60 * 24 * 365);
+      return data?.signedUrl ?? "";
+    },
+    onSuccess: (url) => {
+      if (!url) return;
+      setMember((prev) => ({ ...prev, avatar_url: url }));
+      toast.success("புகைப்படம் ஏற்றப்பட்டது – சேமி அழுத்துங்கள்");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const savePayment = useMutation({
+    mutationFn: async (p: {
+      id: string;
+      amount: string;
+      utr: string;
+      status: "pending" | "verified" | "rejected";
+    }) => {
+      const { error } = await supabase
+        .from("payments")
+        .update({ amount: Number(p.amount || 0), utr: p.utr.trim(), status: p.status })
+        .eq("id", p.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      setPayEdit(null);
+      void qc.invalidateQueries({ queryKey: ["payments"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      toast.success("Payment புதுப்பிக்கப்பட்டது ✅");
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  const deletePayment = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("payments").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["payments"] });
+      void qc.invalidateQueries({ queryKey: ["wallet"] });
+      toast.success("Payment நீக்கப்பட்டது");
     },
     onError: (e: Error) => toast.error(e.message),
   });
@@ -394,6 +492,47 @@ function AdminPage() {
                 value={member.address}
                 onChange={(e) => setMember({ ...member, address: e.target.value })}
               />
+              <div className="flex items-center gap-2 sm:col-span-2">
+                {member.avatar_url ? (
+                  <img
+                    src={member.avatar_url}
+                    alt="member"
+                    className="size-12 shrink-0 rounded-full border border-glass-border object-cover"
+                  />
+                ) : (
+                  <span className="gradient-blue grid size-12 shrink-0 place-items-center rounded-full text-sm font-bold text-primary-foreground">
+                    {(member.full_name || "B").charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => photoRef.current?.click()}
+                  disabled={uploadMemberPhoto.isPending}
+                  className="tamil flex items-center gap-2 rounded-2xl border border-glass-border px-3 py-2 text-[11px] disabled:opacity-50"
+                >
+                  <Camera className="size-3.5 text-primary" /> Profile Photo
+                </button>
+                {member.avatar_url ? (
+                  <button
+                    type="button"
+                    onClick={() => setMember({ ...member, avatar_url: "" })}
+                    className="tamil text-[11px] text-destructive"
+                  >
+                    நீக்கு
+                  </button>
+                ) : null}
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadMemberPhoto.mutate(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
               <label className="tamil flex items-center gap-2 text-[11px] text-muted-foreground">
                 <input
                   type="checkbox"
@@ -433,7 +572,19 @@ function AdminPage() {
                   key={m.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
                 >
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {m.avatar_url ? (
+                      <img
+                        src={m.avatar_url}
+                        alt={m.full_name}
+                        className="size-9 shrink-0 rounded-full border border-glass-border object-cover"
+                      />
+                    ) : (
+                      <span className="gradient-blue grid size-9 shrink-0 place-items-center rounded-full text-[11px] font-bold text-primary-foreground">
+                        {(m.full_name || m.email || "B").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
                     <p className="tamil truncate text-xs font-semibold">
                       {m.full_name || m.email}{" "}
                       {m.role === "admin" ? <span className="text-primary">• admin</span> : null}
@@ -443,8 +594,18 @@ function AdminPage() {
                       {m.invitation_status}
                       {m.active ? "" : " • disabled"}
                     </p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    <button
+                      onClick={() => resetPassword.mutate({ email: m.email, phone: m.phone })}
+                      disabled={resetPassword.isPending}
+                      className="grid size-8 place-items-center rounded-full border border-glass-border text-warning disabled:opacity-50"
+                      aria-label="Reset password to mobile number"
+                      title="Reset password to mobile number"
+                    >
+                      <KeyRound className="size-3.5" />
+                    </button>
                     <button
                       onClick={() =>
                         setMember({
@@ -457,6 +618,7 @@ function AdminPage() {
                           address: m.address,
                           role: m.role,
                           active: m.active,
+                          avatar_url: m.avatar_url ?? "",
                         })
                       }
                       className="grid size-8 place-items-center rounded-full border border-glass-border text-primary"
@@ -680,6 +842,122 @@ function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="mt-5 border-t border-glass-border pt-4">
+            <CardTitle
+              icon="📜"
+              title="Payment History"
+              subtitle={`${(payments ?? []).length} entries • verified பணம் இங்கே பட்டியலாகும்`}
+            />
+            <div className="grid gap-2 lg:grid-cols-2">
+              {(payments ?? []).map((p) => {
+                const name =
+                  profiles?.find((x) => x.id === p.user_id)?.full_name ?? "Member";
+                const editing = payEdit?.id === p.id;
+                return (
+                  <div
+                    key={p.id}
+                    className="rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
+                  >
+                    {editing ? (
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        <input
+                          className={field}
+                          inputMode="numeric"
+                          value={payEdit.amount}
+                          onChange={(e) => setPayEdit({ ...payEdit, amount: e.target.value })}
+                          placeholder="₹ தொகை"
+                        />
+                        <input
+                          className={field}
+                          value={payEdit.utr}
+                          onChange={(e) => setPayEdit({ ...payEdit, utr: e.target.value })}
+                          placeholder="UTR"
+                        />
+                        <select
+                          className={field}
+                          value={payEdit.status}
+                          onChange={(e) =>
+                            setPayEdit({
+                              ...payEdit,
+                              status: e.target.value as "pending" | "verified" | "rejected",
+                            })
+                          }
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="verified">Verified</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => savePayment.mutate(payEdit)}
+                            className="gradient-blue tamil flex-1 rounded-2xl py-2 text-[11px] font-semibold text-primary-foreground"
+                          >
+                            சேமி
+                          </button>
+                          <button
+                            onClick={() => setPayEdit(null)}
+                            className="tamil rounded-2xl border border-glass-border px-3 text-[11px]"
+                          >
+                            ரத்து
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="tamil truncate text-xs font-semibold">{name}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {money(Number(p.amount))} • UTR {p.utr || "—"} •{" "}
+                            {tamilDate(p.verified_at ?? p.created_at)}
+                          </p>
+                          <p
+                            className={cn(
+                              "text-[10px] font-semibold",
+                              p.status === "verified"
+                                ? "text-success"
+                                : p.status === "rejected"
+                                  ? "text-destructive"
+                                  : "text-warning",
+                            )}
+                          >
+                            {p.status === "verified"
+                              ? "✅ Verified"
+                              : p.status === "rejected"
+                                ? "❌ Rejected"
+                                : "⏳ Pending"}
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button
+                            onClick={() =>
+                              setPayEdit({
+                                id: p.id,
+                                amount: String(p.amount ?? ""),
+                                utr: p.utr ?? "",
+                                status: p.status as "pending" | "verified" | "rejected",
+                              })
+                            }
+                            className="grid size-8 place-items-center rounded-full border border-glass-border text-primary"
+                            aria-label="Edit payment"
+                          >
+                            <Pencil className="size-3.5" />
+                          </button>
+                          <button
+                            onClick={() => deletePayment.mutate(p.id)}
+                            className="grid size-8 place-items-center rounded-full border border-glass-border text-destructive"
+                            aria-label="Delete payment"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         </GlassCard>
       ) : null}
