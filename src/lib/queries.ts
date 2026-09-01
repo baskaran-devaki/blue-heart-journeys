@@ -64,7 +64,7 @@ export const profilesQuery = queryOptions({
   queryFn: async () => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, full_name, phone, avatar_url, last_seen")
+      .select("id, full_name, email, phone, avatar_url, last_seen, dob, blood_group, address, active")
       .order("full_name");
     if (error) throw error;
     return data ?? [];
@@ -149,4 +149,48 @@ export function walletTotals(
   const income = txns.filter((t) => t.type === "income").reduce((s, t) => s + Number(t.amount), 0);
   const expense = txns.filter((t) => t.type === "expense").reduce((s, t) => s + Number(t.amount), 0);
   return { income, expense, balance: income - expense };
+}
+
+export const memberInvitesQuery = queryOptions({
+  queryKey: ["member_invites"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("member_invites")
+      .select("*")
+      .order("full_name");
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export function tripSongsQuery(tripId?: string | null) {
+  return queryOptions({
+    queryKey: ["trip-songs", tripId ?? "all"],
+    queryFn: async () => {
+      let q = supabase.from("trip_songs").select("*").order("created_at", { ascending: false });
+      if (tripId) q = q.eq("trip_id", tripId);
+      const { data, error } = await q;
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export function liveViewersQuery(sessionId?: string | null) {
+  return queryOptions({
+    queryKey: ["live-viewers", sessionId],
+    enabled: !!sessionId,
+    refetchInterval: 15_000,
+    queryFn: async () => {
+      const since = new Date(Date.now() - 90_000).toISOString();
+      const { data, error } = await supabase
+        .from("live_viewers")
+        .select("*")
+        .eq("session_id", sessionId!)
+        .gt("last_seen", since)
+        .order("last_seen", { ascending: false });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
 }
