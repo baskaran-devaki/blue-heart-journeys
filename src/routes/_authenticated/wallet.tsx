@@ -58,37 +58,17 @@ function WalletPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowPay((v) => !v)}
-          className="gradient-blue tamil mt-3 w-full rounded-2xl py-3 text-sm font-semibold text-primary-foreground"
-        >
-          <IndianRupee className="mr-1 inline size-4" /> Add Money
-        </button>
-
-        {showPay ? (
-          <div className="mt-3 space-y-2 rounded-2xl border border-glass-border bg-secondary/30 p-3">
-            <p className="tamil text-xs">
-              UPI ID: <span className="font-semibold">{UPI_ID}</span>
+        <div className="mt-3 space-y-2 rounded-2xl border border-glass-border bg-secondary/30 p-3">
+          <p className="tamil text-[11px] text-muted-foreground">
+            வரவு = Admin சரிபார்த்த உறுப்பினர் பணம் மட்டுமே. பணம் செலுத்த{" "}
+            <span className="font-semibold text-primary">Members</span> பக்கத்தை பயன்படுத்துங்கள்.
+          </p>
+          {myPending.length ? (
+            <p className="tamil text-[11px] text-warning">
+              ⏳ {myPending.length} payment verification pending
             </p>
-            {trip ? (
-              <a
-                href={upiLink(amount, `BHG ${trip.name}`)}
-                className="tamil block rounded-2xl border border-glass-border py-2.5 text-center text-xs font-semibold text-primary"
-              >
-                {money(amount)} செலுத்த UPI செயலியை திற
-              </a>
-            ) : null}
-            <p className="tamil text-[10px] text-muted-foreground">
-              பணம் செலுத்திய பின் Members பக்கத்தில் UTR / Reference எண்ணை சமர்ப்பிக்கவும். Admin
-              சரிபார்த்த பிறகே ✅ Payment Done ஆகும்.
-            </p>
-            {myPending.length ? (
-              <p className="tamil text-[11px] text-warning">
-                ⏳ {myPending.length} payment verification pending
-              </p>
-            ) : null}
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </GlassCard>
 
       <GlassCard>
