@@ -269,6 +269,89 @@ export type Database = {
           },
         ]
       }
+      live_viewers: {
+        Row: {
+          display_name: string
+          last_seen: string
+          session_id: string
+          user_id: string
+        }
+        Insert: {
+          display_name?: string
+          last_seen?: string
+          session_id: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string
+          last_seen?: string
+          session_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_viewers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "live_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      member_invites: {
+        Row: {
+          accepted_at: string | null
+          active: boolean
+          address: string
+          avatar_url: string | null
+          blood_group: string
+          created_at: string
+          dob: string | null
+          email: string
+          full_name: string
+          id: string
+          invitation_status: string
+          invited_at: string | null
+          phone: string
+          role: Database["public"]["Enums"]["app_role"]
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          active?: boolean
+          address?: string
+          avatar_url?: string | null
+          blood_group?: string
+          created_at?: string
+          dob?: string | null
+          email: string
+          full_name?: string
+          id?: string
+          invitation_status?: string
+          invited_at?: string | null
+          phone?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          active?: boolean
+          address?: string
+          avatar_url?: string | null
+          blood_group?: string
+          created_at?: string
+          dob?: string | null
+          email?: string
+          full_name?: string
+          id?: string
+          invitation_status?: string
+          invited_at?: string | null
+          phone?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       memories: {
         Row: {
           caption: string
@@ -421,24 +504,39 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active: boolean
+          address: string
           avatar_url: string | null
+          blood_group: string
           created_at: string
+          dob: string | null
+          email: string
           full_name: string
           id: string
           last_seen: string
           phone: string
         }
         Insert: {
+          active?: boolean
+          address?: string
           avatar_url?: string | null
+          blood_group?: string
           created_at?: string
+          dob?: string | null
+          email?: string
           full_name?: string
           id: string
           last_seen?: string
           phone?: string
         }
         Update: {
+          active?: boolean
+          address?: string
           avatar_url?: string | null
+          blood_group?: string
           created_at?: string
+          dob?: string | null
+          email?: string
           full_name?: string
           id?: string
           last_seen?: string
@@ -537,6 +635,44 @@ export type Database = {
           },
         ]
       }
+      trip_songs: {
+        Row: {
+          added_by: string | null
+          created_at: string
+          id: string
+          storage_path: string | null
+          title: string
+          trip_id: string | null
+          url: string
+        }
+        Insert: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          storage_path?: string | null
+          title: string
+          trip_id?: string | null
+          url?: string
+        }
+        Update: {
+          added_by?: string | null
+          created_at?: string
+          id?: string
+          storage_path?: string | null
+          title?: string
+          trip_id?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_songs_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       trips: {
         Row: {
           budget_per_person: number
@@ -546,11 +682,13 @@ export type Database = {
           details: string
           end_date: string | null
           id: string
+          journey_places: string
           maps_url: string | null
           name: string
           start_date: string | null
           start_location: string
           status: Database["public"]["Enums"]["trip_status"]
+          total_budget: number
         }
         Insert: {
           budget_per_person?: number
@@ -560,11 +698,13 @@ export type Database = {
           details?: string
           end_date?: string | null
           id?: string
+          journey_places?: string
           maps_url?: string | null
           name: string
           start_date?: string | null
           start_location?: string
           status?: Database["public"]["Enums"]["trip_status"]
+          total_budget?: number
         }
         Update: {
           budget_per_person?: number
@@ -574,11 +714,13 @@ export type Database = {
           details?: string
           end_date?: string | null
           id?: string
+          journey_places?: string
           maps_url?: string | null
           name?: string
           start_date?: string | null
           start_location?: string
           status?: Database["public"]["Enums"]["trip_status"]
+          total_budget?: number
         }
         Relationships: []
       }
@@ -608,7 +750,10 @@ export type Database = {
           created_by: string | null
           id: string
           note: string
+          receipt_path: string | null
+          title: string
           trip_id: string | null
+          txn_date: string
           type: Database["public"]["Enums"]["txn_type"]
         }
         Insert: {
@@ -618,7 +763,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           note?: string
+          receipt_path?: string | null
+          title?: string
           trip_id?: string | null
+          txn_date?: string
           type: Database["public"]["Enums"]["txn_type"]
         }
         Update: {
@@ -628,7 +776,10 @@ export type Database = {
           created_by?: string | null
           id?: string
           note?: string
+          receipt_path?: string | null
+          title?: string
           trip_id?: string | null
+          txn_date?: string
           type?: Database["public"]["Enums"]["txn_type"]
         }
         Relationships: [
@@ -658,13 +809,20 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
+      purge_old_chat: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "member"
       media_type: "photo" | "video"
       participation_status: "pending" | "confirmed" | "not_interested"
       payment_status: "pending" | "verified" | "rejected"
-      trip_status: "upcoming" | "live" | "completed" | "coming_soon"
+      trip_status:
+        | "upcoming"
+        | "live"
+        | "completed"
+        | "coming_soon"
+        | "active"
+        | "closed"
       txn_type: "income" | "expense"
     }
     CompositeTypes: {
@@ -797,7 +955,14 @@ export const Constants = {
       media_type: ["photo", "video"],
       participation_status: ["pending", "confirmed", "not_interested"],
       payment_status: ["pending", "verified", "rejected"],
-      trip_status: ["upcoming", "live", "completed", "coming_soon"],
+      trip_status: [
+        "upcoming",
+        "live",
+        "completed",
+        "coming_soon",
+        "active",
+        "closed",
+      ],
       txn_type: ["income", "expense"],
     },
   },
