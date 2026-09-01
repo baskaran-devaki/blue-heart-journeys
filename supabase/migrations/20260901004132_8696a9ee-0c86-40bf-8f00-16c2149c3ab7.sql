@@ -1,0 +1,14 @@
+REVOKE EXECUTE ON FUNCTION public.update_updated_at_column() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.on_payment_verified() FROM anon, authenticated, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.purge_old_chat() FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.bootstrap_me(text) FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.current_email() FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.current_phone() FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_admin() FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.is_member() FROM anon, PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.has_role(uuid, app_role) FROM anon, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.bootstrap_me(text) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.current_email() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_member() TO authenticated;
+GRANT EXECUTE ON FUNCTION public.has_role(uuid, app_role) TO authenticated;
