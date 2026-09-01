@@ -8,14 +8,6 @@ type ProvisionInput = {
   resetPassword?: boolean;
 };
 
-async function assertAdmin(context: { supabase: any; userId: string }) {
-  const { data: isAdmin } = await context.supabase.rpc("has_role", {
-    _user_id: context.userId,
-    _role: "admin",
-  });
-  if (!isAdmin) throw new Error("Forbidden");
-}
-
 /**
  * Creates (or re-syncs) the login account for a member the admin added.
  * The member's mobile number is used as the initial password – Supabase
@@ -25,7 +17,11 @@ export const provisionMemberAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input: ProvisionInput) => input)
   .handler(async ({ data, context }) => {
-    await assertAdmin(context);
+    const { data: isAdmin } = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin) throw new Error("Forbidden");
 
     const email = data.email.trim().toLowerCase();
     const password = data.phone.replace(/\D/g, "");
