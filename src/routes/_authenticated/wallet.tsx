@@ -1,11 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { ArrowDownLeft, ArrowUpRight, IndianRupee } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { currentTripQuery, paymentsQuery, walletQuery, walletTotals } from "@/lib/queries";
-import { dateTime, money, upiLink, UPI_ID } from "@/lib/bhg";
+import { dateTime, money } from "@/lib/bhg";
 import { useAuth } from "@/lib/auth";
 
 export const Route = createFileRoute("/_authenticated/wallet")({
@@ -28,9 +27,7 @@ function WalletPage() {
   const { data: trip } = useQuery(currentTripQuery);
   const { data: txns } = useQuery(walletQuery(null));
   const { data: payments } = useQuery(paymentsQuery(trip?.id));
-  const [showPay, setShowPay] = useState(false);
   const totals = walletTotals(txns ?? []);
-  const amount = Number(trip?.budget_per_person ?? 0);
   const myPending = (payments ?? []).filter(
     (p) => p.user_id === user?.id && p.status === "pending",
   );
