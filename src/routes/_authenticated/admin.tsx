@@ -492,6 +492,47 @@ function AdminPage() {
                 value={member.address}
                 onChange={(e) => setMember({ ...member, address: e.target.value })}
               />
+              <div className="flex items-center gap-2 sm:col-span-2">
+                {member.avatar_url ? (
+                  <img
+                    src={member.avatar_url}
+                    alt="member"
+                    className="size-12 shrink-0 rounded-full border border-glass-border object-cover"
+                  />
+                ) : (
+                  <span className="gradient-blue grid size-12 shrink-0 place-items-center rounded-full text-sm font-bold text-primary-foreground">
+                    {(member.full_name || "B").charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => photoRef.current?.click()}
+                  disabled={uploadMemberPhoto.isPending}
+                  className="tamil flex items-center gap-2 rounded-2xl border border-glass-border px-3 py-2 text-[11px] disabled:opacity-50"
+                >
+                  <Camera className="size-3.5 text-primary" /> Profile Photo
+                </button>
+                {member.avatar_url ? (
+                  <button
+                    type="button"
+                    onClick={() => setMember({ ...member, avatar_url: "" })}
+                    className="tamil text-[11px] text-destructive"
+                  >
+                    நீக்கு
+                  </button>
+                ) : null}
+                <input
+                  ref={photoRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) uploadMemberPhoto.mutate(f);
+                    e.target.value = "";
+                  }}
+                />
+              </div>
               <label className="tamil flex items-center gap-2 text-[11px] text-muted-foreground">
                 <input
                   type="checkbox"
@@ -531,7 +572,19 @@ function AdminPage() {
                   key={m.id}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-glass-border bg-secondary/25 px-3 py-2"
                 >
-                  <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    {m.avatar_url ? (
+                      <img
+                        src={m.avatar_url}
+                        alt={m.full_name}
+                        className="size-9 shrink-0 rounded-full border border-glass-border object-cover"
+                      />
+                    ) : (
+                      <span className="gradient-blue grid size-9 shrink-0 place-items-center rounded-full text-[11px] font-bold text-primary-foreground">
+                        {(m.full_name || m.email || "B").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
                     <p className="tamil truncate text-xs font-semibold">
                       {m.full_name || m.email}{" "}
                       {m.role === "admin" ? <span className="text-primary">• admin</span> : null}
@@ -541,8 +594,18 @@ function AdminPage() {
                       {m.invitation_status}
                       {m.active ? "" : " • disabled"}
                     </p>
+                    </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
+                    <button
+                      onClick={() => resetPassword.mutate({ email: m.email, phone: m.phone })}
+                      disabled={resetPassword.isPending}
+                      className="grid size-8 place-items-center rounded-full border border-glass-border text-warning disabled:opacity-50"
+                      aria-label="Reset password to mobile number"
+                      title="Reset password to mobile number"
+                    >
+                      <KeyRound className="size-3.5" />
+                    </button>
                     <button
                       onClick={() =>
                         setMember({
@@ -555,6 +618,7 @@ function AdminPage() {
                           address: m.address,
                           role: m.role,
                           active: m.active,
+                          avatar_url: m.avatar_url ?? "",
                         })
                       }
                       className="grid size-8 place-items-center rounded-full border border-glass-border text-primary"
