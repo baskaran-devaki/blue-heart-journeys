@@ -356,6 +356,7 @@ export type Database = {
         Row: {
           caption: string
           created_at: string
+          folder: string
           hidden: boolean
           id: string
           media_type: Database["public"]["Enums"]["media_type"]
@@ -367,6 +368,7 @@ export type Database = {
         Insert: {
           caption?: string
           created_at?: string
+          folder?: string
           hidden?: boolean
           id?: string
           media_type?: Database["public"]["Enums"]["media_type"]
@@ -378,6 +380,7 @@ export type Database = {
         Update: {
           caption?: string
           created_at?: string
+          folder?: string
           hidden?: boolean
           id?: string
           media_type?: Database["public"]["Enums"]["media_type"]
@@ -460,6 +463,7 @@ export type Database = {
           amount: number
           created_at: string
           id: string
+          instalment_no: number
           note: string | null
           status: Database["public"]["Enums"]["payment_status"]
           trip_id: string
@@ -472,6 +476,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          instalment_no?: number
           note?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           trip_id: string
@@ -484,6 +489,7 @@ export type Database = {
           amount?: number
           created_at?: string
           id?: string
+          instalment_no?: number
           note?: string | null
           status?: Database["public"]["Enums"]["payment_status"]
           trip_id?: string
@@ -573,6 +579,59 @@ export type Database = {
           scheduled_date?: string | null
         }
         Relationships: []
+      }
+      trip_financials: {
+        Row: {
+          amount_per_member: number
+          archived_at: string
+          end_date: string | null
+          final_balance: number
+          id: string
+          snapshot: Json
+          start_date: string | null
+          total_budget: number
+          total_collection: number
+          total_expenses: number
+          trip_id: string | null
+          trip_name: string
+        }
+        Insert: {
+          amount_per_member?: number
+          archived_at?: string
+          end_date?: string | null
+          final_balance?: number
+          id?: string
+          snapshot?: Json
+          start_date?: string | null
+          total_budget?: number
+          total_collection?: number
+          total_expenses?: number
+          trip_id?: string | null
+          trip_name?: string
+        }
+        Update: {
+          amount_per_member?: number
+          archived_at?: string
+          end_date?: string | null
+          final_balance?: number
+          id?: string
+          snapshot?: Json
+          start_date?: string | null
+          total_budget?: number
+          total_collection?: number
+          total_expenses?: number
+          trip_id?: string | null
+          trip_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trip_financials_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "trips"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       trip_images: {
         Row: {
@@ -797,6 +856,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_trip_financials: { Args: { _trip_id: string }; Returns: string }
       bootstrap_me: { Args: { _full_name: string }; Returns: string }
       current_email: { Args: never; Returns: string }
       current_phone: { Args: never; Returns: string }
@@ -809,7 +869,26 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       is_member: { Args: never; Returns: boolean }
+      notify_admins: {
+        Args: { _body: string; _kind: string; _title: string }
+        Returns: undefined
+      }
+      notify_members: {
+        Args: {
+          _body: string
+          _exclude?: string
+          _kind: string
+          _title: string
+        }
+        Returns: undefined
+      }
+      notify_one: {
+        Args: { _body: string; _kind: string; _title: string; _user: string }
+        Returns: undefined
+      }
       purge_old_chat: { Args: never; Returns: number }
+      reset_trip_wallet: { Args: { _trip_id: string }; Returns: string }
+      trip_upload_open: { Args: { _trip_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "member"
