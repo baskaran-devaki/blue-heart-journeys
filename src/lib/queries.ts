@@ -194,3 +194,29 @@ export function liveViewersQuery(sessionId?: string | null) {
     },
   });
 }
+
+export const notificationsQuery = queryOptions({
+  queryKey: ["notifications"],
+  refetchInterval: 30_000,
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(60);
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export const tripFinancialsQuery = queryOptions({
+  queryKey: ["trip-financials"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("trip_financials")
+      .select("*")
+      .order("archived_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+});
