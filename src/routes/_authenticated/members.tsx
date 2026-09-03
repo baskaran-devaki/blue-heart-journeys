@@ -97,17 +97,21 @@ function MembersPage() {
   const submitUtr = useMutation({
     mutationFn: async () => {
       if (!trip || !user) throw new Error("No active trip");
+      const value = Number(payAmount || 0);
+      if (value <= 0) throw new Error("Enter the amount you paid");
       const { error } = await supabase.from("payments").insert({
         trip_id: trip.id,
         user_id: user.id,
-        amount,
+        amount: value,
         utr: utr.trim(),
         status: "pending",
+        instalment_no: instalment,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setUtr("");
+      setPayAmount("");
       void qc.invalidateQueries({ queryKey: ["payments"] });
       toast.success("Payment Verification Pending");
     },
@@ -116,8 +120,8 @@ function MembersPage() {
 
   const myPart = participation?.find((p) => p.user_id === user?.id);
   const myPayments = (payments ?? []).filter((p) => p.user_id === user?.id);
-  const myVerified = myPayments.some((p) => p.status === "verified");
-  const myPending = myPayments.some((p) => p.status === "pending");
+  const state = memberPayState(payments ?? [], user?.id, amount);
+  const plan = instalmentPlan(amount);
 
   const online = (lastSeen: string) => Date.now() - new Date(lastSeen).getTime() < 90_000;
 
