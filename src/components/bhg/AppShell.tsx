@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { activeLiveQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { KuralFooter } from "./KuralFooter";
+import { NotificationBell, CalendarButton } from "./NavExtras";
 
 function LiveClock() {
   const [now, setNow] = useState<Date | null>(null);
