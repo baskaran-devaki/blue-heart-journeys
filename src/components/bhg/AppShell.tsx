@@ -135,6 +135,8 @@ export function AppShell({
               ) : null}
               {isMember ? (
                 <>
+                  <NotificationBell pill={pill} />
+                  <CalendarButton pill={pill} />
                   <Link
                     to="/settings"
                     aria-label="Settings"
