@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { currentTripQuery, participationQuery, paymentsQuery, profilesQuery } from "@/lib/queries";
 import { money, tamilDate, upiLink, UPI_ID } from "@/lib/bhg";
+import { instalmentPlan, memberPayState } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/members")({
