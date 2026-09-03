@@ -689,7 +689,7 @@ function AdminPage() {
               <input
                 className={field}
                 inputMode="numeric"
-                placeholder="₹ per person"
+                placeholder="₹ Trip payment per member"
                 value={tripForm.budget_per_person}
                 onChange={(e) => setTripForm({ ...tripForm, budget_per_person: e.target.value })}
               />
