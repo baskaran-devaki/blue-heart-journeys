@@ -72,6 +72,8 @@ function MembersPage() {
   const { data: participation } = useQuery(participationQuery(trip?.id));
   const { data: payments } = useQuery(paymentsQuery(trip?.id));
   const [utr, setUtr] = useState("");
+  const [payAmount, setPayAmount] = useState("");
+  const [instalment, setInstalment] = useState(1);
   const [open, setOpen] = useState<MemberRow | null>(null);
 
   const amount = Number(trip?.budget_per_person ?? 0);
