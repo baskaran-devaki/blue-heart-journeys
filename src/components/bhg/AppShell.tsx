@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth";
 import { activeLiveQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 import { KuralFooter } from "./KuralFooter";
+import { NotificationBell, CalendarButton } from "./NavExtras";
 
 function LiveClock() {
   const [now, setNow] = useState<Date | null>(null);
@@ -135,6 +136,8 @@ export function AppShell({
               ) : null}
               {isMember ? (
                 <>
+                  <NotificationBell pill={pill} />
+                  <CalendarButton pill={pill} />
                   <Link
                     to="/settings"
                     aria-label="Settings"
@@ -158,16 +161,16 @@ export function AppShell({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-[calc(env(safe-area-inset-bottom,0px)+6rem)] md:max-w-3xl md:pb-10 xl:max-w-5xl 2xl:max-w-6xl">
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col pb-[calc(env(safe-area-inset-bottom,0px)+4.75rem)] md:max-w-3xl md:pb-10 xl:max-w-5xl 2xl:max-w-6xl">
         <main className="min-w-0 flex-1 space-y-4 px-3 pt-4 sm:px-4 md:px-6 md:pt-6">
           {children}
         </main>
         {showFooter ? <KuralFooter /> : null}
       </div>
 
-      {/* BOTTOM NAVIGATION (mobile / tablet) */}
-      <nav className="fixed inset-x-0 bottom-0 z-50 mx-auto max-w-lg px-2 pb-[env(safe-area-inset-bottom)] sm:px-3 md:hidden">
-        <div className="mb-3 flex items-stretch justify-between gap-1 rounded-3xl border border-glass-border bg-background/95 px-1.5 py-2 backdrop-blur-xl sm:px-2">
+      {/* BOTTOM NAVIGATION (mobile / tablet) — full bottom width, no gap below */}
+      <nav className="fixed inset-x-0 bottom-0 z-50 w-full border-t border-glass-border bg-background/95 pb-[env(safe-area-inset-bottom,0px)] backdrop-blur-xl md:hidden">
+        <div className="mx-auto flex w-full max-w-lg items-stretch justify-between gap-1 px-2 py-2 sm:px-3">
           {NAV.map((item) => {
             const active = pathname === item.to;
             return (

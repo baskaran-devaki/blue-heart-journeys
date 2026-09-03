@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { currentTripQuery, participationQuery, paymentsQuery, profilesQuery } from "@/lib/queries";
 import { money, tamilDate, upiLink, UPI_ID } from "@/lib/bhg";
+import { instalmentPlan, memberPayState } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/members")({
@@ -72,6 +73,8 @@ function MembersPage() {
   const { data: participation } = useQuery(participationQuery(trip?.id));
   const { data: payments } = useQuery(paymentsQuery(trip?.id));
   const [utr, setUtr] = useState("");
+  const [payAmount, setPayAmount] = useState("");
+  const [instalment, setInstalment] = useState(1);
   const [open, setOpen] = useState<MemberRow | null>(null);
 
   const amount = Number(trip?.budget_per_person ?? 0);
@@ -97,17 +100,21 @@ function MembersPage() {
   const submitUtr = useMutation({
     mutationFn: async () => {
       if (!trip || !user) throw new Error("No active trip");
+      const value = Number(payAmount || 0);
+      if (value <= 0) throw new Error("Enter the amount you paid");
       const { error } = await supabase.from("payments").insert({
         trip_id: trip.id,
         user_id: user.id,
-        amount,
+        amount: value,
         utr: utr.trim(),
         status: "pending",
+        instalment_no: instalment,
       });
       if (error) throw error;
     },
     onSuccess: () => {
       setUtr("");
+      setPayAmount("");
       void qc.invalidateQueries({ queryKey: ["payments"] });
       toast.success("Payment Verification Pending");
     },
@@ -116,8 +123,8 @@ function MembersPage() {
 
   const myPart = participation?.find((p) => p.user_id === user?.id);
   const myPayments = (payments ?? []).filter((p) => p.user_id === user?.id);
-  const myVerified = myPayments.some((p) => p.status === "verified");
-  const myPending = myPayments.some((p) => p.status === "pending");
+  const state = memberPayState(payments ?? [], user?.id, amount);
+  const plan = instalmentPlan(amount);
 
   const online = (lastSeen: string) => Date.now() - new Date(lastSeen).getTime() < 90_000;
 
@@ -133,44 +140,100 @@ function MembersPage() {
         {trip ? (
           <div className="mb-4 rounded-2xl border border-glass-border bg-secondary/30 p-3">
             <p className="tamil text-xs font-semibold">உங்கள் முடிவு</p>
-            {myVerified ? (
-              <p className="tamil mt-2 text-sm font-semibold text-success">✅ Payment Done</p>
+            {state.status === "done" ? (
+              <p className="tamil mt-2 text-sm font-semibold text-success">
+                ✅ Payment Done • {money(state.verified)}
+              </p>
             ) : myPart?.status === "not_interested" ? (
               <p className="tamil mt-2 text-sm font-semibold text-destructive">❌ Not Interested</p>
             ) : myPart?.status === "confirmed" ? (
               <div className="mt-2 space-y-2">
                 <p className="tamil text-xs">
-                  செலுத்த வேண்டிய தொகை: <span className="font-bold">{money(amount)}</span>
+                  மொத்த தொகை: <span className="font-bold">{money(amount)}</span> • Paid{" "}
+                  <span className="font-bold text-success">{money(state.verified)}</span> • Balance{" "}
+                  <span className="font-bold text-warning">{money(state.remaining)}</span>
                 </p>
+                <p className={cn("tamil text-xs font-semibold", state.tone)}>{state.label}</p>
+                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                  {plan.map((amt, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setInstalment(i + 1);
+                        setPayAmount(String(amt));
+                      }}
+                      className={cn(
+                        "rounded-xl border px-2 py-1.5 text-center",
+                        instalment === i + 1
+                          ? "border-primary text-primary"
+                          : "border-glass-border text-muted-foreground",
+                      )}
+                    >
+                      <span className="block text-[9px]">Instalment {i + 1}</span>
+                      <span className="block text-[11px] font-bold">{money(amt)}</span>
+                    </button>
+                  ))}
+                </div>
                 <a
-                  href={upiLink(amount, `BHG ${trip.name}`)}
+                  href={upiLink(
+                    Number(payAmount || plan[instalment - 1] || amount),
+                    `BHG ${trip.name} #${instalment}`,
+                  )}
                   className="gradient-blue tamil flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold text-primary-foreground"
                 >
                   <IndianRupee className="size-4" /> Pay via UPI ({UPI_ID})
                 </a>
-                {myPending ? (
+                {state.pending > 0 ? (
                   <p className="tamil flex items-center gap-1.5 text-xs text-warning">
-                    <Clock className="size-3.5" /> Payment Verification Pending
+                    <Clock className="size-3.5" /> {money(state.pending)} Verification Pending
                   </p>
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    <input
-                      value={utr}
-                      onChange={(e) => setUtr(e.target.value)}
-                      placeholder="UTR / Reference No"
-                      className="min-w-[10rem] flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none"
-                    />
-                    <button
-                      onClick={() => submitUtr.mutate()}
-                      disabled={utr.trim().length < 4 || submitUtr.isPending}
-                      className="tamil rounded-2xl border border-glass-border px-3 py-2 text-xs font-semibold text-primary disabled:opacity-50"
-                    >
-                      சமர்ப்பி
-                    </button>
+                ) : null}
+                <div className="flex flex-wrap gap-2">
+                  <input
+                    value={payAmount}
+                    onChange={(e) => setPayAmount(e.target.value.replace(/[^\d.]/g, ""))}
+                    inputMode="decimal"
+                    placeholder="₹ செலுத்திய தொகை"
+                    className="min-w-[8rem] flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none"
+                  />
+                  <input
+                    value={utr}
+                    onChange={(e) => setUtr(e.target.value)}
+                    placeholder="UTR / Reference No"
+                    className="min-w-[10rem] flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none"
+                  />
+                  <button
+                    onClick={() => submitUtr.mutate()}
+                    disabled={
+                      utr.trim().length < 4 || Number(payAmount || 0) <= 0 || submitUtr.isPending
+                    }
+                    className="tamil rounded-2xl border border-glass-border px-3 py-2 text-xs font-semibold text-primary disabled:opacity-50"
+                  >
+                    சமர்ப்பி
+                  </button>
+                </div>
+                {myPayments.length ? (
+                  <div className="space-y-1">
+                    {myPayments.map((p) => (
+                      <p key={p.id} className="text-[10px] text-muted-foreground">
+                        #{p.instalment_no} • {money(p.amount)} • UTR {p.utr} •{" "}
+                        <span
+                          className={
+                            p.status === "verified"
+                              ? "text-success"
+                              : p.status === "rejected"
+                                ? "text-destructive"
+                                : "text-warning"
+                          }
+                        >
+                          {p.status}
+                        </span>
+                      </p>
+                    ))}
                   </div>
-                )}
+                ) : null}
                 <p className="tamil text-[10px] text-muted-foreground">
-                  Admin சரிபார்த்த பிறகு ✅ Payment Done காட்டப்படும்.
+                  Admin சரிபார்த்த பிறகு மட்டுமே தொகை wallet-ல் சேரும்.
                 </p>
               </div>
             ) : (
