@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Send, Paperclip, Pin, Trash2 } from "lucide-react";
+import { Send, Paperclip, Pin, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ function ChatPage() {
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [online, setOnline] = useState(0);
+  const [full, setFull] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
