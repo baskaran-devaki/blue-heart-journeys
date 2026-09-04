@@ -62,14 +62,41 @@ export function itineraryQuery(tripId?: string | null) {
 export const profilesQuery = queryOptions({
   queryKey: ["profiles"],
   queryFn: async () => {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("id, full_name, email, phone, avatar_url, last_seen, dob, blood_group, address, active")
-      .order("full_name");
+    const [{ data, error }, { data: invites }] = await Promise.all([
+      supabase
+        .from("profiles")
+        .select(
+          "id, full_name, email, phone, avatar_url, last_seen, dob, blood_group, address, active",
+        )
+        .order("full_name"),
+      supabase
+        .from("member_invites")
+        .select("id, full_name, email, phone, avatar_url, dob, blood_group, address, active")
+        .eq("active", true),
+    ]);
     if (error) throw error;
-    return data ?? [];
+    const rows = data ?? [];
+    const seen = new Set(rows.map((r) => (r.email || "").toLowerCase()));
+    const pending = (invites ?? [])
+      .filter((i) => !seen.has((i.email || "").toLowerCase()))
+      .map((i) => ({
+        id: i.id,
+        full_name: i.full_name,
+        email: i.email,
+        phone: i.phone,
+        avatar_url: i.avatar_url,
+        last_seen: new Date(0).toISOString(),
+        dob: i.dob,
+        blood_group: i.blood_group,
+        address: i.address,
+        active: i.active,
+      }));
+    return [...rows, ...pending].sort((a, b) =>
+      (a.full_name || "").localeCompare(b.full_name || ""),
+    );
   },
 });
+
 
 export function participationQuery(tripId?: string | null) {
   return queryOptions({
