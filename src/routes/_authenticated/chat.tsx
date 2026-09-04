@@ -154,13 +154,29 @@ function ChatPage() {
 
   const pinned = useMemo(() => (messages ?? []).filter((m) => m.pinned), [messages]);
 
-  return (
-    <AppShell showFooter={false}>
-      <GlassCard className="flex h-[calc(100dvh-17rem)] min-h-[22rem] flex-col md:h-[calc(100dvh-13rem)]">
+  const card = (
+      <GlassCard
+        className={cn(
+          "flex min-h-[22rem] flex-col",
+          full
+            ? "h-full rounded-none border-0"
+            : "h-[calc(100dvh-17rem)] md:h-[calc(100dvh-13rem)]",
+        )}
+      >
         <CardTitle
           icon="💬"
           title="MEMBERS CHAT"
           subtitle={`${online} online`}
+          action={
+            <button
+              onClick={() => setFull((v) => !v)}
+              aria-label={full ? "Exit fullscreen" : "Fullscreen"}
+              className="tamil flex shrink-0 items-center gap-1.5 rounded-full border border-glass-border px-3 py-2 text-[11px] font-semibold text-primary"
+            >
+              {full ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              {full ? "Exit" : "Fullscreen"}
+            </button>
+          }
         />
 
         {pinned.length ? (
