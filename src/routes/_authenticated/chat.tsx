@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Send, Paperclip, Pin, Trash2 } from "lucide-react";
+import { Send, Paperclip, Pin, Trash2, Maximize2, Minimize2 } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +33,7 @@ function ChatPage() {
   const qc = useQueryClient();
   const [text, setText] = useState("");
   const [online, setOnline] = useState(0);
+  const [full, setFull] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -154,13 +155,29 @@ function ChatPage() {
 
   const pinned = useMemo(() => (messages ?? []).filter((m) => m.pinned), [messages]);
 
-  return (
-    <AppShell showFooter={false}>
-      <GlassCard className="flex h-[calc(100dvh-17rem)] min-h-[22rem] flex-col md:h-[calc(100dvh-13rem)]">
+  const card = (
+      <GlassCard
+        className={cn(
+          "flex min-h-[22rem] flex-col",
+          full
+            ? "h-full rounded-none border-0"
+            : "h-[calc(100dvh-17rem)] md:h-[calc(100dvh-13rem)]",
+        )}
+      >
         <CardTitle
           icon="💬"
           title="MEMBERS CHAT"
           subtitle={`${online} online`}
+          action={
+            <button
+              onClick={() => setFull((v) => !v)}
+              aria-label={full ? "Exit fullscreen" : "Fullscreen"}
+              className="tamil flex shrink-0 items-center gap-1.5 rounded-full border border-glass-border px-3 py-2 text-[11px] font-semibold text-primary"
+            >
+              {full ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />}
+              {full ? "Exit" : "Fullscreen"}
+            </button>
+          }
         />
 
         {pinned.length ? (
@@ -301,6 +318,11 @@ function ChatPage() {
           </button>
         </div>
       </GlassCard>
-    </AppShell>
   );
+
+  if (full) {
+    return <div className="fixed inset-0 z-[60] flex flex-col bg-background">{card}</div>;
+  }
+
+  return <AppShell showFooter={false}>{card}</AppShell>;
 }
