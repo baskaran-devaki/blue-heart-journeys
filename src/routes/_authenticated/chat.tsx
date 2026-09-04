@@ -317,6 +317,11 @@ function ChatPage() {
           </button>
         </div>
       </GlassCard>
-    </AppShell>
   );
+
+  if (full) {
+    return <div className="fixed inset-0 z-[60] flex flex-col bg-background">{card}</div>;
+  }
+
+  return <AppShell showFooter={false}>{card}</AppShell>;
 }
