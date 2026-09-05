@@ -60,7 +60,8 @@ function WalletPage() {
   const contributionName = (t: { category: string; note: string | null }) => {
     if (t.category !== "member_contribution") return null;
     const m = /UTR:\s*([^)]+)\)/.exec(t.note ?? "");
-    const pay = (allPayments ?? []).find((p) => m && p.utr === m[1].trim());
+    const utr = m?.[1]?.trim();
+    const pay = (allPayments ?? []).find((p) => utr && p.utr === utr);
     return pay ? (profiles?.find((pr) => pr.id === pay.user_id)?.full_name ?? null) : null;
   };
 
