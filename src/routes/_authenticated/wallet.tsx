@@ -16,7 +16,7 @@ import {
   walletTotals,
 } from "@/lib/queries";
 import { dateTime, money, tamilDate } from "@/lib/bhg";
-import { instalmentPlan, memberPayState, type PaymentRow } from "@/lib/payments";
+import { memberPayState, type PaymentRow } from "@/lib/payments";
 import { openTripReport, type TripReport } from "@/lib/tripPdf";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
@@ -55,8 +55,15 @@ function WalletPage() {
   );
   const totals = walletTotals(txns);
   const perMember = Number(trip?.budget_per_person ?? 0);
-  const plan = instalmentPlan(perMember);
   const mine = memberPayState(payments, user?.id, perMember);
+
+  const contributionName = (t: { category: string; note: string | null }) => {
+    if (t.category !== "member_contribution") return null;
+    const m = /UTR:\s*([^)]+)\)/.exec(t.note ?? "");
+    const utr = m?.[1]?.trim();
+    const pay = (allPayments ?? []).find((p) => utr && p.utr === utr);
+    return pay ? (profiles?.find((pr) => pr.id === pay.user_id)?.full_name ?? null) : null;
+  };
 
   const reset = useMutation({
     mutationFn: async (id: string) => {
@@ -186,7 +193,7 @@ function WalletPage() {
           <div className="mt-3 space-y-2 rounded-2xl border border-glass-border bg-secondary/30 p-3">
             <p className="tamil text-[11px] text-muted-foreground">
               வரவு = Admin சரிபார்த்த உறுப்பினர் பணம் மட்டுமே. பணம் செலுத்த{" "}
-              <span className="font-semibold text-primary">Members</span> பக்கத்தை பயன்படுத்துங்கள்.
+              <span className="font-semibold text-primary">Friends</span> பக்கத்தை பயன்படுத்துங்கள்.
             </p>
             <p className={cn("tamil text-xs font-semibold", mine.tone)}>
               உங்கள் நிலை: {mine.label}
@@ -196,24 +203,13 @@ function WalletPage() {
               {mine.pending ? ` • ${money(mine.pending)} awaiting verification` : ""}
               {mine.remaining ? ` • Balance ${money(mine.remaining)}` : ""}
             </p>
-            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-              {plan.map((amt, i) => (
-                <div
-                  key={i}
-                  className="rounded-xl border border-glass-border bg-secondary/40 px-2 py-1.5 text-center"
-                >
-                  <p className="text-[9px] text-muted-foreground">Instalment {i + 1}</p>
-                  <p className="text-[11px] font-bold">{money(amt)}</p>
-                </div>
-              ))}
-            </div>
           </div>
         ) : null}
       </GlassCard>
 
       {isAdmin && trip ? (
         <GlassCard>
-          <CardTitle icon="🧮" title="Member Payment Status" subtitle="verified பணத்தின் அடிப்படையில்" />
+          <CardTitle icon="🧮" title="Friend Payment Status" subtitle="verified பணத்தின் அடிப்படையில்" />
           <div className="space-y-2">
             {(profiles ?? []).map((m) => {
               const st = memberPayState(payments, m.id, perMember);
@@ -252,7 +248,9 @@ function WalletPage() {
                   <ArrowUpRight className="size-4 shrink-0 text-destructive" />
                 )}
                 <div className="min-w-0">
-                  <p className="tamil truncate text-xs font-semibold">{t.title || t.category}</p>
+                  <p className="tamil truncate text-xs font-semibold">
+                    {contributionName(t) ?? (t.title || t.category)}
+                  </p>
                   <p className="truncate text-[10px] text-muted-foreground">
                     {t.note || t.category} • {dateTime(t.created_at)}
                   </p>

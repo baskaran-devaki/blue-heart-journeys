@@ -102,7 +102,7 @@ const emptyTrip: TripForm = {
 const TAB_LIST = ["members", "trips", "payments", "expenses", "live"] as const;
 type Tab = (typeof TAB_LIST)[number];
 const TAB_LABEL: Record<Tab, string> = {
-  members: "👥 Members",
+  members: "👥 Friends",
   trips: "🧭 Trips",
   payments: "✅ Payments",
   expenses: "🧾 Expenses",
@@ -565,7 +565,7 @@ function AdminPage() {
           </GlassCard>
 
           <GlassCard>
-            <CardTitle icon="📋" title="உறுப்பினர் பட்டியல்" subtitle={`${invites?.length ?? 0} members`} />
+            <CardTitle icon="📋" title="உறுப்பினர் பட்டியல்" subtitle={`${invites?.length ?? 0} friends`} />
             <div className="space-y-2">
               {(invites ?? []).map((m) => (
                 <div

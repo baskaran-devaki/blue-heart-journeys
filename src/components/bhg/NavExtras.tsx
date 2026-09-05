@@ -16,8 +16,8 @@ function Sheet({
   children: React.ReactNode;
 }) {
   return (
-    <div className="fixed inset-0 z-[60] flex items-end justify-center bg-background/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
-      <div className="glass flex max-h-[80dvh] w-full max-w-md flex-col rounded-t-3xl border border-glass-border p-4 sm:rounded-3xl">
+    <div className="fixed inset-x-0 top-0 z-[60] flex justify-center bg-background/70 px-3 pt-[7.75rem] pb-4 backdrop-blur-sm sm:pt-[8.5rem]">
+      <div className="glass flex max-h-[calc(100dvh-10rem)] w-full max-w-md flex-col rounded-3xl border border-glass-border p-4">
         <div className="mb-3 flex items-center justify-between gap-2">
           <p className="tamil text-sm font-semibold">{title}</p>
           <button onClick={onClose} aria-label="Close" className="text-muted-foreground">
@@ -55,6 +55,11 @@ export function NotificationBell({ pill }: { pill: string }) {
     void qc.invalidateQueries({ queryKey: ["notifications"] });
   };
 
+  const markOne = async (id: string) => {
+    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    void qc.invalidateQueries({ queryKey: ["notifications"] });
+  };
+
   return (
     <>
       <button
@@ -78,7 +83,7 @@ export function NotificationBell({ pill }: { pill: string }) {
               onClick={() => void markAll()}
               className="tamil mb-2 w-full rounded-2xl border border-glass-border py-2 text-[11px] font-semibold text-primary"
             >
-              எல்லாவற்றையும் படித்ததாக குறி / Mark all read
+              🧹 Clear • எல்லாவற்றையும் படித்ததாக குறி
             </button>
           ) : null}
           <div className="space-y-2">
@@ -88,10 +93,13 @@ export function NotificationBell({ pill }: { pill: string }) {
               </p>
             ) : null}
             {(items ?? []).map((n) => (
-              <div
+              <button
                 key={n.id}
+                onClick={() => {
+                  if (!n.read) void markOne(n.id);
+                }}
                 className={cn(
-                  "rounded-2xl border p-3",
+                  "block w-full rounded-2xl border p-3 text-left",
                   n.read
                     ? "border-glass-border bg-secondary/20"
                     : "border-primary/50 bg-primary/10",
@@ -105,7 +113,7 @@ export function NotificationBell({ pill }: { pill: string }) {
                   <p className="tamil mt-1 text-[11px] break-words text-muted-foreground">{n.body}</p>
                 ) : null}
                 <p className="mt-1 text-[10px] text-muted-foreground">{dateTime(n.created_at)}</p>
-              </div>
+              </button>
             ))}
           </div>
         </Sheet>

@@ -14,12 +14,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
     meta: [
-      { title: "💬 Members Chat – BLUE HEART GUYS" },
+      { title: "💬 Friends Chat – BLUE HEART GUYS" },
       {
         name: "description",
         content: "BLUE HEART GUYS உறுப்பினர்களுக்கான தனிப்பட்ட realtime குழு அரட்டை.",
       },
-      { property: "og:title", content: "💬 Members Chat – BLUE HEART GUYS" },
+      { property: "og:title", content: "💬 Friends Chat – BLUE HEART GUYS" },
       { property: "og:description", content: "Private realtime group chat for approved members." },
     ],
   }),
@@ -166,7 +166,7 @@ function ChatPage() {
       >
         <CardTitle
           icon="💬"
-          title="MEMBERS CHAT"
+          title="FRIENDS CHAT"
           subtitle={`${online} online`}
           action={
             <button

@@ -15,12 +15,12 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/_authenticated/members")({
   head: () => ({
     meta: [
-      { title: "👥 Members – BLUE HEART GUYS" },
+      { title: "👥 Friends – BLUE HEART GUYS" },
       {
         name: "description",
         content: "BLUE HEART GUYS உறுப்பினர்கள், பயண உறுதிப்படுத்தல் மற்றும் பணம் செலுத்தும் நிலை.",
       },
-      { property: "og:title", content: "👥 Members – BLUE HEART GUYS" },
+      { property: "og:title", content: "👥 Friends – BLUE HEART GUYS" },
       { property: "og:description", content: "உறுப்பினர் உறுதி மற்றும் payment நிலை." },
     ],
   }),
@@ -133,7 +133,7 @@ function MembersPage() {
       <GlassCard>
         <CardTitle
           icon="👥"
-          title="MEMBERS"
+          title="FRIENDS"
           subtitle={trip ? `${trip.name} – ${money(amount)} / நபர்` : "தற்போது பயணம் இல்லை"}
         />
 
