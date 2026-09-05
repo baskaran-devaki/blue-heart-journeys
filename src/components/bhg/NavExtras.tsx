@@ -113,7 +113,7 @@ export function NotificationBell({ pill }: { pill: string }) {
                   <p className="tamil mt-1 text-[11px] break-words text-muted-foreground">{n.body}</p>
                 ) : null}
                 <p className="mt-1 text-[10px] text-muted-foreground">{dateTime(n.created_at)}</p>
-              </div>
+              </button>
             ))}
           </div>
         </Sheet>
