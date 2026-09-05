@@ -565,7 +565,7 @@ function AdminPage() {
           </GlassCard>
 
           <GlassCard>
-            <CardTitle icon="📋" title="உறுப்பினர் பட்டியல்" subtitle={`${invites?.length ?? 0} members`} />
+            <CardTitle icon="📋" title="உறுப்பினர் பட்டியல்" subtitle={`${invites?.length ?? 0} friends`} />
             <div className="space-y-2">
               {(invites ?? []).map((m) => (
                 <div
