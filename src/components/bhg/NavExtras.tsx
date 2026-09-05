@@ -48,17 +48,22 @@ export function NotificationBell({ pill }: { pill: string }) {
     };
   }, [qc]);
 
-  const markAll = async () => {
-    const ids = (items ?? []).filter((n) => !n.read).map((n) => n.id);
+  const clearAll = async () => {
+    const ids = (items ?? []).map((n) => n.id);
     if (!ids.length) return;
-    await supabase.from("notifications").update({ read: true }).in("id", ids);
-    void qc.invalidateQueries({ queryKey: ["notifications"] });
+    qc.setQueryData(["notifications"], []);
+    const { error } = await supabase.from("notifications").delete().in("id", ids);
+    if (error) {
+      await supabase.from("notifications").update({ read: true }).in("id", ids);
+    }
+    await qc.invalidateQueries({ queryKey: ["notifications"] });
   };
 
   const markOne = async (id: string) => {
     await supabase.from("notifications").update({ read: true }).eq("id", id);
     void qc.invalidateQueries({ queryKey: ["notifications"] });
   };
+
 
   return (
     <>
