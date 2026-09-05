@@ -37,7 +37,7 @@ const NAV = [
   { to: "/memories", label: "Memories", icon: Images },
   { to: "/wallet", label: "Wallet", icon: Wallet },
   { to: "/chat", label: "Chat", icon: MessageCircle },
-  { to: "/members", label: "Members", icon: Users },
+  { to: "/members", label: "Friends", icon: Users },
 ] as const;
 
 function Avatar({ name, url }: { name: string; url: string | null | undefined }) {

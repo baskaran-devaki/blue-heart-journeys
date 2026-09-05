@@ -102,7 +102,7 @@ const emptyTrip: TripForm = {
 const TAB_LIST = ["members", "trips", "payments", "expenses", "live"] as const;
 type Tab = (typeof TAB_LIST)[number];
 const TAB_LABEL: Record<Tab, string> = {
-  members: "👥 Members",
+  members: "👥 Friends",
   trips: "🧭 Trips",
   payments: "✅ Payments",
   expenses: "🧾 Expenses",
