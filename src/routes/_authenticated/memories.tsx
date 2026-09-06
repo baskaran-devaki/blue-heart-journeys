@@ -1,316 +1,260 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Upload, Trash2, EyeOff, Eye, FolderPlus, Lock } from "lucide-react";
+import { Plus, Trash2, Play } from "lucide-react";
 import { AppShell } from "@/components/bhg/AppShell";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
-import { allTripsQuery, currentTripQuery, memoriesQuery, profilesQuery } from "@/lib/queries";
-import { dateTime, signedUrls, tamilDate } from "@/lib/bhg";
+import { favouriteVideosQuery, profilesQuery } from "@/lib/queries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/memories")({
   head: () => ({
     meta: [
-      { title: "📸 Memories – நினைவுகள் – BLUE HEART GUYS" },
+      { title: "▶️ YouTube – பாடல்கள் – BLUE HEART GUYS" },
       {
         name: "description",
-        content: "பயண நினைவுகள் – trip வாரியாக folder-களில் ஒழுங்கமைக்கப்பட்ட புகைப்படங்கள்.",
+        content: "BLUE HEART GUYS நண்பர்களின் favourite பாடல்கள் மற்றும் videos ஒரே இடத்தில்.",
       },
-      { property: "og:title", content: "📸 Memories – நினைவுகள்" },
-      { property: "og:description", content: "BLUE HEART GUYS trip photo folders." },
+      { property: "og:title", content: "▶️ YouTube – Favourite Songs / Videos" },
+      { property: "og:description", content: "BLUE HEART GUYS favourite songs and videos." },
     ],
   }),
-  component: MemoriesPage,
+  component: YouTubePage,
 });
 
 const inField =
   "min-w-0 flex-1 rounded-2xl border border-glass-border bg-secondary/50 px-3 py-2 text-xs outline-none";
 
-/** Upload window = the actual trip dates (Asia/Kolkata), same rule the database enforces. */
-function uploadOpen(start?: string | null, end?: string | null) {
-  if (!start || !end) return false;
-  const today = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10);
-  return today >= start && today <= end;
+/** Extract the 11-char YouTube video id from any common YouTube URL form. */
+export function youtubeId(input: string): string | null {
+  const value = input.trim();
+  if (/^[\w-]{11}$/.test(value)) return value;
+  const patterns = [
+    /(?:youtube\.com\/watch\?[^#]*\bv=)([\w-]{11})/,
+    /youtu\.be\/([\w-]{11})/,
+    /youtube\.com\/(?:embed|shorts|live)\/([\w-]{11})/,
+  ];
+  for (const re of patterns) {
+    const m = value.match(re);
+    if (m?.[1]) return m[1];
+  }
+  return null;
 }
 
-function MemoriesPage() {
+declare global {
+  interface Window {
+    YT?: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+
+function loadYouTubeApi(): Promise<any> {
+  if (window.YT?.Player) return Promise.resolve(window.YT);
+  return new Promise((resolve) => {
+    const existing = document.querySelector<HTMLScriptElement>("script[data-yt-api]");
+    const prev = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => {
+      prev?.();
+      resolve(window.YT);
+    };
+    if (!existing) {
+      const script = document.createElement("script");
+      script.src = "https://www.youtube.com/iframe_api";
+      script.dataset["ytApi"] = "1";
+      document.head.appendChild(script);
+    }
+  });
+}
+
+function YouTubePage() {
   const { user, isAdmin } = useAuth();
   const qc = useQueryClient();
-  const fileRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [tripId, setTripId] = useState<string>("");
-  const [folder, setFolder] = useState("General");
-  const [newFolder, setNewFolder] = useState("");
-  const [extraFolders, setExtraFolders] = useState<string[]>([]);
-
-  const { data: current } = useQuery(currentTripQuery);
-  const { data: trips } = useQuery(allTripsQuery);
+  const { data: videos } = useQuery(favouriteVideosQuery);
   const { data: profiles } = useQuery(profilesQuery);
-  const { data: items } = useQuery(memoriesQuery(null));
 
-  const activeTripId = tripId || current?.id || "";
-  const activeTrip = (trips ?? []).find((t) => t.id === activeTripId);
-  const canUpload = isAdmin || uploadOpen(activeTrip?.start_date, activeTrip?.end_date);
+  const [title, setTitle] = useState("");
+  const [url, setUrl] = useState("");
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const photos = useMemo(
-    () => (items ?? []).filter((i) => i.media_type === "photo"),
-    [items],
-  );
+  const holderRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
+  const indexRef = useRef(0);
+  const listRef = useRef<{ video_id: string }[]>([]);
 
-  const folders = useMemo(() => {
-    const set = new Set<string>(["General", ...extraFolders]);
-    photos.filter((p) => p.trip_id === activeTripId).forEach((p) => set.add(p.folder || "General"));
-    return Array.from(set);
-  }, [photos, activeTripId, extraFolders]);
+  const list = videos ?? [];
+  listRef.current = list;
+  indexRef.current = currentIndex;
 
-  const { data: urls } = useQuery({
-    queryKey: ["memory-urls", photos.map((i) => i.storage_path).join(",")],
-    enabled: photos.length > 0,
-    queryFn: async () => {
-      const map = await signedUrls(
-        "memories",
-        photos.map((i) => i.storage_path),
-      );
-      return Object.fromEntries(map);
-    },
-    staleTime: 30 * 60_000,
-  });
+  const currentId = list[currentIndex]?.video_id ?? "";
 
-  const upload = useMutation({
-    mutationFn: async (files: FileList) => {
+  // Create the single main player once, then only load new videos into it.
+  useEffect(() => {
+    let disposed = false;
+    void loadYouTubeApi().then((YT) => {
+      if (disposed || !holderRef.current || playerRef.current) return;
+      playerRef.current = new YT.Player(holderRef.current, {
+        width: "100%",
+        height: "100%",
+        playerVars: { playsinline: 1, rel: 0, modestbranding: 1 },
+        events: {
+          onStateChange: (event: any) => {
+            if (event.data === YT.PlayerState.ENDED) {
+              const total = listRef.current.length;
+              if (total > 1) setCurrentIndex((i) => (i + 1) % total);
+            }
+          },
+        },
+      });
+    });
+    return () => {
+      disposed = true;
+      playerRef.current?.destroy?.();
+      playerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!currentId || !playerRef.current?.loadVideoById) return;
+    playerRef.current.loadVideoById(currentId);
+  }, [currentId]);
+
+  const add = useMutation({
+    mutationFn: async () => {
       if (!user) throw new Error("Not signed in");
-      if (!activeTripId) throw new Error("Select a trip first");
-      if (!canUpload) throw new Error("Photo upload is open only during the trip dates");
-      for (const file of Array.from(files)) {
-        if (!file.type.startsWith("image/")) throw new Error("Photos only");
-        const ext = (file.name.split(".").pop() ?? "jpg").replace(/[^\w]/g, "").toLowerCase();
-        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "jpg"}`;
-        const { error: upErr } = await supabase.storage.from("memories").upload(path, file, {
-          contentType: file.type || "image/jpeg",
-          cacheControl: "3600",
-          upsert: false,
-        });
-        if (upErr) throw upErr;
-        const { error } = await supabase.from("memories").insert({
-          trip_id: activeTripId,
-          user_id: user.id,
-          media_type: "photo",
-          storage_path: path,
-          folder: folder || "General",
-        });
-        if (error) {
-          await supabase.storage.from("memories").remove([path]);
-          throw error;
-        }
+      const name = title.trim();
+      const videoId = youtubeId(url);
+      if (!name) throw new Error("Song / Video பெயரை உள்ளிடுங்கள்");
+      if (!videoId) throw new Error("சரியான YouTube URL உள்ளிடுங்கள்");
+      if (list.some((v) => v.video_id === videoId)) throw new Error("இந்த video ஏற்கனவே உள்ளது");
+      const { error } = await supabase.from("favourite_videos").insert({
+        user_id: user.id,
+        title: name,
+        url: url.trim(),
+        video_id: videoId,
+      });
+      if (error) {
+        if (error.code === "23505" || /duplicate/i.test(error.message))
+          throw new Error("இந்த video ஏற்கனவே உள்ளது");
+        throw error;
       }
     },
-    onMutate: () => setUploading(true),
-    onSettled: () => setUploading(false),
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["memories"] });
-      void qc.invalidateQueries({ queryKey: ["memory-urls"] });
-      toast.success("பதிவேற்றம் முடிந்தது 💙");
+      setTitle("");
+      setUrl("");
+      void qc.invalidateQueries({ queryKey: ["favourite-videos"] });
+      toast.success("சேர்க்கப்பட்டது 💙");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-
   const remove = useMutation({
-    mutationFn: async (item: { id: string; storage_path: string }) => {
-      await supabase.storage.from("memories").remove([item.storage_path]);
-      const { error } = await supabase.from("memories").delete().eq("id", item.id);
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("favourite_videos").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
-      void qc.invalidateQueries({ queryKey: ["memories"] });
+      void qc.invalidateQueries({ queryKey: ["favourite-videos"] });
       toast.success("நீக்கப்பட்டது");
     },
     onError: (e: Error) => toast.error(e.message),
   });
 
-  const toggleHide = useMutation({
-    mutationFn: async (item: { id: string; hidden: boolean }) => {
-      const { error } = await supabase
-        .from("memories")
-        .update({ hidden: !item.hidden })
-        .eq("id", item.id);
-      if (error) throw error;
-    },
-    onSuccess: () => void qc.invalidateQueries({ queryKey: ["memories"] }),
-    onError: (e: Error) => toast.error(e.message),
-  });
-
-  const tripPhotos = photos.filter((p) => p.trip_id === activeTripId);
-  const grouped = folders
-    .map((f) => ({ folder: f, list: tripPhotos.filter((p) => (p.folder || "General") === f) }))
-    .filter((g) => g.list.length > 0 || g.folder === folder);
+  const friendName = (userId: string) =>
+    profiles?.find((p) => p.id === userId)?.full_name || "Friend";
 
   return (
     <AppShell>
       <GlassCard>
         <CardTitle
-          icon="📸"
-          title="MEMORIES – நினைவுகள்"
-          subtitle="Trip → Folder வாரியாக புகைப்படங்கள் மட்டும்"
-          action={
-            <button
-              onClick={() => fileRef.current?.click()}
-              disabled={uploading || !canUpload || !activeTripId}
-              className="gradient-blue glow-sm tamil flex shrink-0 items-center gap-1.5 rounded-full px-3 py-2 text-[11px] font-semibold text-primary-foreground disabled:opacity-50"
-            >
-              <Upload className="size-3.5" /> {uploading ? "..." : "Upload"}
-            </button>
-          }
+          icon="▶️"
+          title="YOUTUBE"
+          subtitle="நண்பர்களின் favourite பாடல்கள் & videos"
         />
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          multiple
-          hidden
-          onChange={(e) => {
-            if (e.target.files?.length) upload.mutate(e.target.files);
-            e.target.value = "";
-          }}
-        />
-
-        <div className="space-y-2">
-          <div className="flex flex-wrap gap-2">
-            <select
-              className={inField}
-              value={activeTripId}
-              onChange={(e) => setTripId(e.target.value)}
-            >
-              <option value="">-- பயணத்தை தேர்ந்தெடுங்கள் --</option>
-              {(trips ?? []).map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </select>
-            <select className={inField} value={folder} onChange={(e) => setFolder(e.target.value)}>
-              {folders.map((f) => (
-                <option key={f} value={f}>
-                  📁 {f}
-                </option>
-              ))}
-            </select>
+        <div className="overflow-hidden rounded-2xl border border-glass-border bg-black">
+          <div className="aspect-video w-full">
+            <div ref={holderRef} className="size-full" />
           </div>
-          <div className="flex flex-wrap gap-2">
-            <input
-              className={inField}
-              value={newFolder}
-              onChange={(e) => setNewFolder(e.target.value)}
-              placeholder="புதிய folder பெயர்"
-            />
-            <button
-              onClick={() => {
-                const name = newFolder.trim();
-                if (!name) return;
-                setExtraFolders((prev) => Array.from(new Set([...prev, name])));
-                setFolder(name);
-                setNewFolder("");
-              }}
-              className="tamil flex items-center gap-1.5 rounded-2xl border border-glass-border px-3 py-2 text-xs font-semibold text-primary"
-            >
-              <FolderPlus className="size-3.5" /> Folder உருவாக்கு
-            </button>
-          </div>
-
-          {activeTrip ? (
-            <p
-              className={cn(
-                "tamil flex items-start gap-1.5 text-[11px]",
-                canUpload ? "text-success" : "text-warning",
-              )}
-            >
-              {canUpload ? null : <Lock className="mt-0.5 size-3.5 shrink-0" />}
-              {canUpload
-                ? "Upload திறந்திருக்கிறது 💙"
-                : `Upload பயண நாட்களில் மட்டுமே: ${tamilDate(activeTrip.start_date)} – ${tamilDate(activeTrip.end_date)}`}
-            </p>
-          ) : null}
         </div>
+        {list.length === 0 ? (
+          <p className="tamil mt-2 text-xs text-muted-foreground">
+            கீழே ஒரு YouTube link சேர்த்தால் இங்கே play ஆகும்.
+          </p>
+        ) : (
+          <p className="tamil mt-2 truncate text-xs font-semibold">
+            ▶ {list[currentIndex]?.title} •{" "}
+            <span className="text-primary">{friendName(list[currentIndex]?.user_id ?? "")}</span>
+          </p>
+        )}
       </GlassCard>
 
-      {!activeTripId ? (
-        <GlassCard>
-          <p className="tamil text-xs text-muted-foreground">
-            புகைப்படங்களை பார்க்க ஒரு பயணத்தை தேர்ந்தெடுங்கள்.
-          </p>
-        </GlassCard>
-      ) : null}
+      <GlassCard>
+        <CardTitle icon="🎵" title="Favourite Songs / Videos" subtitle={`${list.length} videos`} />
 
-      {grouped.map((group) => (
-        <GlassCard key={group.folder}>
-          <CardTitle icon="📁" title={group.folder} subtitle={`${group.list.length} படங்கள்`} />
-          {group.list.length === 0 ? (
-            <p className="tamil text-xs text-muted-foreground">இந்த folder காலியாக உள்ளது.</p>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-              {group.list.map((item) => {
-                const url = (urls as Record<string, string> | undefined)?.[item.storage_path];
-                const owner = profiles?.find((p) => p.id === item.user_id)?.full_name ?? "Member";
-                return (
-                  <div
-                    key={item.id}
-                    className={cn(
-                      "overflow-hidden rounded-2xl border border-glass-border bg-secondary/30",
-                      item.hidden && "opacity-40",
-                    )}
+        <div className="mb-3 flex flex-wrap gap-2">
+          <input
+            className={inField}
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Song / Video Name"
+          />
+          <input
+            className={inField}
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="YouTube URL"
+          />
+          <button
+            onClick={() => add.mutate()}
+            disabled={add.isPending}
+            className="gradient-blue tamil flex shrink-0 items-center gap-1.5 rounded-2xl px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+          >
+            <Plus className="size-3.5" /> சேர்
+          </button>
+        </div>
+
+        {list.length === 0 ? (
+          <p className="tamil text-xs text-muted-foreground">இன்னும் videos சேர்க்கப்படவில்லை.</p>
+        ) : (
+          <ul className="space-y-2">
+            {list.map((v, i) => (
+              <li
+                key={v.id}
+                className={cn(
+                  "flex items-center gap-2 rounded-2xl border border-glass-border bg-secondary/30 p-2",
+                  i === currentIndex && "border-primary",
+                )}
+              >
+                <button
+                  onClick={() => setCurrentIndex(i)}
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                >
+                  <span className="gradient-blue grid size-8 shrink-0 place-items-center rounded-full text-primary-foreground">
+                    <Play className="size-3.5" />
+                  </span>
+                  <span className="min-w-0">
+                    <span className="tamil block truncate text-xs font-semibold">{v.title}</span>
+                    <span className="block truncate text-[10px] text-muted-foreground">
+                      {friendName(v.user_id)}
+                    </span>
+                  </span>
+                </button>
+                {isAdmin || v.user_id === user?.id ? (
+                  <button
+                    onClick={() => remove.mutate(v.id)}
+                    className="shrink-0 text-destructive"
+                    aria-label="Delete"
                   >
-                    <div className="relative aspect-square bg-muted/40">
-                      {url ? (
-                        <img
-                          src={url}
-                          alt={item.caption || "நினைவு"}
-                          loading="lazy"
-                          className="size-full object-cover"
-                        />
-                      ) : (
-                        <div className="size-full animate-pulse bg-muted/60" />
-                      )}
-                    </div>
-                    <div className="p-2">
-                      <p className="tamil truncate text-[11px] font-semibold">{owner}</p>
-                      <p className="truncate text-[10px] text-muted-foreground">
-                        {dateTime(item.created_at)}
-                      </p>
-                      {isAdmin || item.user_id === user?.id ? (
-                        <div className="mt-1 flex gap-2">
-                          <button
-                            onClick={() => remove.mutate(item)}
-                            className="text-destructive"
-                            aria-label="Delete"
-                          >
-                            <Trash2 className="size-3.5" />
-                          </button>
-                          {isAdmin ? (
-                            <button
-                              onClick={() => toggleHide.mutate(item)}
-                              className="text-muted-foreground"
-                              aria-label="Hide"
-                            >
-                              {item.hidden ? (
-                                <Eye className="size-3.5" />
-                              ) : (
-                                <EyeOff className="size-3.5" />
-                              )}
-                            </button>
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </GlassCard>
-      ))}
+                    <Trash2 className="size-3.5" />
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </GlassCard>
     </AppShell>
   );
 }
