@@ -192,7 +192,7 @@ function WalletPage() {
         {trip ? (
           <div className="mt-3 space-y-2 rounded-2xl border border-glass-border bg-secondary/30 p-3">
             <p className="tamil text-[11px] text-muted-foreground">
-              வரவு = Admin சரிபார்த்த உறுப்பினர் பணம் மட்டுமே. பணம் செலுத்த{" "}
+              நண்பர்கள் பணம் செலுத்த கீழே உள்ள {" "}
               <span className="font-semibold text-primary">Friends</span> பக்கத்தை பயன்படுத்துங்கள்.
             </p>
             <p className={cn("tamil text-xs font-semibold", mine.tone)}>
