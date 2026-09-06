@@ -3,8 +3,8 @@ import destHills from "@/assets/dest-hills.jpg";
 import destBeach from "@/assets/dest-beach.jpg";
 import friendsTrip from "@/assets/friends-trip.jpg";
 
-export const UPI_ID = "asalbaskar@sbi";
-export const UPI_PAYEE = "BLUE HEART GUYS";
+export const UPI_ID = "9940624290";
+export const UPI_PAYEE = "GANESH N";
 
 export const FALLBACK_IMAGES = [destHills, destBeach, friendsTrip];
 
