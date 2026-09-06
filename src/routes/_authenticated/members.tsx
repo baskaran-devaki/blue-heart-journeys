@@ -8,8 +8,8 @@ import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { currentTripQuery, participationQuery, paymentsQuery, profilesQuery } from "@/lib/queries";
-import { money, tamilDate, upiLink, UPI_ID } from "@/lib/bhg";
-import { instalmentPlan, memberPayState } from "@/lib/payments";
+import { money, tamilDate } from "@/lib/bhg";
+import { memberPayState } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/members")({
@@ -124,7 +124,6 @@ function MembersPage() {
   const myPart = participation?.find((p) => p.user_id === user?.id);
   const myPayments = (payments ?? []).filter((p) => p.user_id === user?.id);
   const state = memberPayState(payments ?? [], user?.id, amount);
-  const plan = instalmentPlan(amount);
 
   const online = (lastSeen: string) => Date.now() - new Date(lastSeen).getTime() < 90_000;
 
@@ -154,34 +153,15 @@ function MembersPage() {
                   <span className="font-bold text-warning">{money(state.remaining)}</span>
                 </p>
                 <p className={cn("tamil text-xs font-semibold", state.tone)}>{state.label}</p>
-                <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-                  {plan.map((amt, i) => (
-                    <button
-                      key={i}
-                      onClick={() => {
-                        setInstalment(i + 1);
-                        setPayAmount(String(amt));
-                      }}
-                      className={cn(
-                        "rounded-xl border px-2 py-1.5 text-center",
-                        instalment === i + 1
-                          ? "border-primary text-primary"
-                          : "border-glass-border text-muted-foreground",
-                      )}
-                    >
-                      <span className="block text-[9px]">Instalment {i + 1}</span>
-                      <span className="block text-[11px] font-bold">{money(amt)}</span>
-                    </button>
-                  ))}
+                <div className="rounded-xl border border-glass-border px-3 py-2">
+                  <p className="text-xs font-semibold">GPay or PhonePe: 8754745474</p>
+                  <p className="text-xs font-semibold">Name: BASKARAN R</p>
                 </div>
                 <a
-                  href={upiLink(
-                    Number(payAmount || plan[instalment - 1] || amount),
-                    `BHG ${trip.name} #${instalment}`,
-                  )}
+                  href="upi://pay"
                   className="gradient-blue tamil flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  <IndianRupee className="size-4" /> Pay via UPI ({UPI_ID})
+                  <IndianRupee className="size-4" /> Pay via UPI
                 </a>
                 {state.pending > 0 ? (
                   <p className="tamil flex items-center gap-1.5 text-xs text-warning">

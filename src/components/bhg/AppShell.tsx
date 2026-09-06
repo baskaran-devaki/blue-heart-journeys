@@ -34,7 +34,7 @@ function LiveClock() {
 
 const NAV = [
   { to: "/", label: "Home", icon: Home },
-  { to: "/memories", label: "Memories", icon: Images },
+  { to: "/memories", label: "YouTube", icon: Images },
   { to: "/wallet", label: "Wallet", icon: Wallet },
   { to: "/chat", label: "Chat", icon: MessageCircle },
   { to: "/members", label: "Friends", icon: Users },
