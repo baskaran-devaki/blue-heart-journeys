@@ -89,7 +89,7 @@ export function TripHeroCard() {
       <div className="relative min-h-72">
         <Slideshow images={slides} />
         <div className="relative p-4">
-          <CardTitle icon="🌴" title="சுற்றுலா விவரம்" subtitle={meta.label} />
+          <CardTitle icon="🌴" title="சூறாவளி சுற்றுப்பயணம்" subtitle={meta.label} />
           <h3 className="tamil text-xl leading-tight font-bold">{trip.name}</h3>
           <div className="tamil mt-2 space-y-1 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5">
