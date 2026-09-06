@@ -83,14 +83,15 @@ export function NotificationBell({ pill }: { pill: string }) {
 
       {open ? (
         <Sheet title={`🔔 Notifications${unread ? ` • ${unread} new` : ""}`} onClose={() => setOpen(false)}>
-          {unread ? (
+          {(items ?? []).length ? (
             <button
-              onClick={() => void markAll()}
+              onClick={() => void clearAll()}
               className="tamil mb-2 w-full rounded-2xl border border-glass-border py-2 text-[11px] font-semibold text-primary"
             >
-              🧹 Clear • எல்லாவற்றையும் படித்ததாக குறி
+              🧹 Clear • எல்லா அறிவிப்புகளையும் நீக்கு
             </button>
           ) : null}
+
           <div className="space-y-2">
             {(items ?? []).length === 0 ? (
               <p className="tamil py-6 text-center text-xs text-muted-foreground">

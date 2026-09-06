@@ -83,10 +83,16 @@ function MemoriesPage() {
     mutationFn: async (files: FileList) => {
       if (!user) throw new Error("Not signed in");
       if (!activeTripId) throw new Error("Select a trip first");
+      if (!canUpload) throw new Error("Photo upload is open only during the trip dates");
       for (const file of Array.from(files)) {
         if (!file.type.startsWith("image/")) throw new Error("Photos only");
-        const path = `${user.id}/${Date.now()}-${file.name.replace(/[^\w.-]/g, "_")}`;
-        const { error: upErr } = await supabase.storage.from("memories").upload(path, file);
+        const ext = (file.name.split(".").pop() ?? "jpg").replace(/[^\w]/g, "").toLowerCase();
+        const path = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext || "jpg"}`;
+        const { error: upErr } = await supabase.storage.from("memories").upload(path, file, {
+          contentType: file.type || "image/jpeg",
+          cacheControl: "3600",
+          upsert: false,
+        });
         if (upErr) throw upErr;
         const { error } = await supabase.from("memories").insert({
           trip_id: activeTripId,
@@ -105,10 +111,12 @@ function MemoriesPage() {
     onSettled: () => setUploading(false),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["memories"] });
+      void qc.invalidateQueries({ queryKey: ["memory-urls"] });
       toast.success("பதிவேற்றம் முடிந்தது 💙");
     },
     onError: (e: Error) => toast.error(e.message),
   });
+
 
   const remove = useMutation({
     mutationFn: async (item: { id: string; storage_path: string }) => {
