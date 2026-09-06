@@ -82,6 +82,36 @@ export type Database = {
           },
         ]
       }
+      favourite_videos: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          url: string
+          user_id: string
+          video_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title: string
+          updated_at?: string
+          url: string
+          user_id: string
+          video_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          url?: string
+          user_id?: string
+          video_id?: string
+        }
+        Relationships: []
+      }
       itinerary_days: {
         Row: {
           day_date: string | null
