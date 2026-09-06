@@ -247,3 +247,15 @@ export const tripFinancialsQuery = queryOptions({
     return data ?? [];
   },
 });
+
+export const favouriteVideosQuery = queryOptions({
+  queryKey: ["favourite-videos"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("favourite_videos")
+      .select("*")
+      .order("created_at", { ascending: true });
+    if (error) throw error;
+    return data ?? [];
+  },
+});
