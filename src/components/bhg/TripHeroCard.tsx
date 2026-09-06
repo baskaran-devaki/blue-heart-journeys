@@ -94,7 +94,7 @@ export function TripHeroCard() {
           <div className="tamil mt-2 space-y-1 text-xs text-muted-foreground">
             <p className="flex items-center gap-1.5">
               <MapPin className="size-3.5 text-primary" /> {trip.destination || "—"}
-              {trip.start_location ? ` • புறப்பாடு: ${trip.start_location}` : ""}
+              {trip.start_location ? ` • புறப்படும் நேரம்: ${trip.start_location}` : ""}
             </p>
             <p className="flex items-center gap-1.5">
               <CalendarDays className="size-3.5 text-primary" /> {tamilDate(trip.start_date)} –{" "}
@@ -112,7 +112,7 @@ export function TripHeroCard() {
           {isMember ? (
             <div className="mt-3 rounded-2xl border border-glass-border bg-secondary/30 p-3">
               <p className="tamil text-[11px] font-semibold text-success">
-                ✅ உறுப்பினர்கள் ({officialMembers.length})
+                ✅ சுற்றுலா உறுதி + பணம் செலுத்திய நண்பர்கள் ({officialMembers.length})
               </p>
               <p className="tamil mt-1 text-[11px] text-muted-foreground">
                 {officialMembers.length
