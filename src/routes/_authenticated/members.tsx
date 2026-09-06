@@ -8,8 +8,8 @@ import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { currentTripQuery, participationQuery, paymentsQuery, profilesQuery } from "@/lib/queries";
-import { money, tamilDate, upiLink, UPI_ID } from "@/lib/bhg";
-import { instalmentPlan, memberPayState } from "@/lib/payments";
+import { money, tamilDate } from "@/lib/bhg";
+import { memberPayState } from "@/lib/payments";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/members")({
@@ -124,7 +124,6 @@ function MembersPage() {
   const myPart = participation?.find((p) => p.user_id === user?.id);
   const myPayments = (payments ?? []).filter((p) => p.user_id === user?.id);
   const state = memberPayState(payments ?? [], user?.id, amount);
-  const plan = instalmentPlan(amount);
 
   const online = (lastSeen: string) => Date.now() - new Date(lastSeen).getTime() < 90_000;
 
