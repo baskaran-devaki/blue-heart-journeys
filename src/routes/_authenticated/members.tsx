@@ -154,14 +154,14 @@ function MembersPage() {
                 </p>
                 <p className={cn("tamil text-xs font-semibold", state.tone)}>{state.label}</p>
                 <div className="rounded-xl border border-glass-border px-3 py-2">
-                  <p className="text-xs font-semibold">GPay or PhonePe: 8754745474</p>
+                  <p className="text-xs font-semibold">GPay Only: 8754745474</p>
                   <p className="text-xs font-semibold">Name: BASKARAN R</p>
                 </div>
                 <a
                   href="upi://pay"
                   className="gradient-blue tamil flex items-center justify-center gap-2 rounded-2xl py-2.5 text-sm font-semibold text-primary-foreground"
                 >
-                  <IndianRupee className="size-4" /> Pay via UPI
+                  <IndianRupee className="size-4" /> Pay
                 </a>
                 {state.pending > 0 ? (
                   <p className="tamil flex items-center gap-1.5 text-xs text-warning">
@@ -189,7 +189,7 @@ function MembersPage() {
                     }
                     className="tamil rounded-2xl border border-glass-border px-3 py-2 text-xs font-semibold text-primary disabled:opacity-50"
                   >
-                    சமர்ப்பி
+                    Submit
                   </button>
                 </div>
                 {myPayments.length ? (
@@ -326,8 +326,7 @@ function MembersPage() {
               <button
                 onClick={() => setOpen(null)}
                 className="tamil rounded-2xl border border-glass-border px-4 py-2.5 text-xs"
-              >
-                மூடு
+              >Close
               </button>
             </div>
           </div>
