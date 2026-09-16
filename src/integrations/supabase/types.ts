@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          parts: Json
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id: string
+          parts?: Json
+          role: string
+          thread_id: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          parts?: Json
+          role?: string
+          thread_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_messages_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "ai_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_threads: {
+        Row: {
+          created_at: string
+          id: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       allowed_phones: {
         Row: {
           approved: boolean
@@ -111,6 +173,82 @@ export type Database = {
           video_id?: string
         }
         Relationships: []
+      }
+      friend_status_likes: {
+        Row: {
+          created_at: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_status_likes_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "friend_statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      friend_statuses: {
+        Row: {
+          ai_message_id: string | null
+          content: string
+          created_at: string
+          expires_at: string
+          id: string
+          original_url: string | null
+          platform: string | null
+          preview_title: string | null
+          status_type: string
+          thumbnail_url: string | null
+          user_id: string
+        }
+        Insert: {
+          ai_message_id?: string | null
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          original_url?: string | null
+          platform?: string | null
+          preview_title?: string | null
+          status_type: string
+          thumbnail_url?: string | null
+          user_id: string
+        }
+        Update: {
+          ai_message_id?: string | null
+          content?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          original_url?: string | null
+          platform?: string | null
+          preview_title?: string | null
+          status_type?: string
+          thumbnail_url?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "friend_statuses_ai_message_id_fkey"
+            columns: ["ai_message_id"]
+            isOneToOne: false
+            referencedRelation: "ai_messages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       itinerary_days: {
         Row: {
