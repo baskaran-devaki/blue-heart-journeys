@@ -1,7 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-import type { MotionProps } from "motion/react";
+import type { MotionProps, MotionStyle } from "motion/react";
 import { motion } from "motion/react";
 import type { ElementType, JSX } from "react";
 import { memo, useMemo } from "react";
@@ -56,11 +56,13 @@ const ShimmerComponent = ({
         className
       )}
       initial={{ backgroundPosition: "100% center" }}
-      style={{
-        "--spread": `${dynamicSpread}px`,
-        backgroundImage:
-          "var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))",
-      }}
+      style={
+        {
+          "--spread": `${dynamicSpread}px`,
+          backgroundImage:
+            "var(--bg), linear-gradient(var(--color-muted-foreground), var(--color-muted-foreground))",
+        } as MotionStyle & Record<"--spread", string>
+      }
       transition={{
         duration,
         ease: "linear",
