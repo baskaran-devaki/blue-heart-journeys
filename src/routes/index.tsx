@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/bhg/AppShell";
 import { TripHeroCard } from "@/components/bhg/TripHeroCard";
+import { FriendsStatus } from "@/components/bhg/FriendsStatus";
 import { useAuth } from "@/lib/auth";
 import friendsTrip from "@/assets/friends-trip.jpg";
 
@@ -83,6 +84,7 @@ function HomePage() {
       </p>
 
       <TripHeroCard />
+      <FriendsStatus />
     </AppShell>
   );
 }

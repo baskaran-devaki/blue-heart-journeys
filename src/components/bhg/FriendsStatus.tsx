@@ -21,6 +21,7 @@ export function FriendsStatus() {
 
   const shareVideo = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("Sign in required");
       const parsed = parseSharedVideoUrl(videoUrl);
       if (!parsed) throw new Error("YouTube, Instagram அல்லது Facebook video link மட்டும் சேர்க்கவும்");
       const { error } = await supabase.from("friend_statuses").insert({
@@ -30,6 +31,7 @@ export function FriendsStatus() {
         platform: parsed.platform,
         preview_title: title.trim() || null,
         thumbnail_url: parsed.thumbnailUrl,
+        user_id: user.id,
       });
       if (error) throw error;
     },
@@ -64,8 +66,8 @@ export function FriendsStatus() {
   });
 
   return (
-    <section className="mt-5 space-y-3" aria-labelledby="friends-status-title">
-      <CardTitle id="friends-status-title">💙 FRIENDS STATUS</CardTitle>
+    <section className="mt-5 space-y-3" aria-label="Friends status">
+      <CardTitle icon="💙" title="FRIENDS STATUS" subtitle="24 மணி நேர நண்பர்கள் பகிர்வுகள்" />
       <GlassCard className="p-3 sm:p-4">
         <div className="grid gap-2 sm:grid-cols-[1fr_1.4fr_auto]">
           <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Video title (optional)" />

@@ -22,9 +22,13 @@ import {
 } from "@/components/ai-elements/prompt-input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+import { useAuth } from "@/lib/auth";
 import { aiMessagesQuery, aiThreadsQuery } from "@/lib/queries";
 
-function toMessage(row: Awaited<ReturnType<ReturnType<typeof aiMessagesQuery>["queryFn"]>>[number]): UIMessage {
+type AiMessageRow = Database["public"]["Tables"]["ai_messages"]["Row"];
+
+function toMessage(row: AiMessageRow): UIMessage {
   return {
     id: row.id,
     role: row.role === "assistant" ? "assistant" : "user",
@@ -37,6 +41,7 @@ function toMessage(row: Awaited<ReturnType<ReturnType<typeof aiMessagesQuery>["q
 export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
@@ -73,9 +78,10 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
 
   const createThread = useMutation({
     mutationFn: async () => {
+      if (!user) throw new Error("Sign in required");
       const { data, error: createError } = await supabase
         .from("ai_threads")
-        .insert({ title: "புதிய உரையாடல்" })
+        .insert({ title: "புதிய உரையாடல்", user_id: user.id })
         .select("id")
         .single();
       if (createError) throw createError;
@@ -103,6 +109,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
 
   const shareAnswer = useMutation({
     mutationFn: async (message: UIMessage) => {
+      if (!user) throw new Error("Sign in required");
       const content = message.parts
         .filter((part) => part.type === "text")
         .map((part) => part.text)
@@ -113,6 +120,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
         status_type: "ai",
         content,
         ai_message_id: message.id,
+        user_id: user.id,
       });
       if (shareError) throw shareError;
     },
