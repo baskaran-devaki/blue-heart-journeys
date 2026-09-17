@@ -259,3 +259,52 @@ export const favouriteVideosQuery = queryOptions({
     return data ?? [];
   },
 });
+
+export const aiThreadsQuery = queryOptions({
+  queryKey: ["ai-threads"],
+  queryFn: async () => {
+    const { data, error } = await supabase
+      .from("ai_threads")
+      .select("*")
+      .order("updated_at", { ascending: false });
+    if (error) throw error;
+    return data ?? [];
+  },
+});
+
+export function aiMessagesQuery(threadId?: string) {
+  return queryOptions({
+    queryKey: ["ai-messages", threadId],
+    enabled: !!threadId,
+    queryFn: async () => {
+      if (!threadId) return [];
+      const { data, error } = await supabase
+        .from("ai_messages")
+        .select("*")
+        .eq("thread_id", threadId)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return data ?? [];
+    },
+  });
+}
+
+export const activeFriendStatusesQuery = queryOptions({
+  queryKey: ["friend-statuses", "active"],
+  staleTime: 0,
+  refetchInterval: 60_000,
+  queryFn: async () => {
+    const now = new Date().toISOString();
+    const [{ data: statuses, error }, { data: likes, error: likesError }] = await Promise.all([
+      supabase
+        .from("friend_statuses")
+        .select("*")
+        .gt("expires_at", now)
+        .order("created_at", { ascending: false }),
+      supabase.from("friend_status_likes").select("status_id, user_id"),
+    ]);
+    if (error) throw error;
+    if (likesError) throw likesError;
+    return { statuses: statuses ?? [], likes: likes ?? [] };
+  },
+});
