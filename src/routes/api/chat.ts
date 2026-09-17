@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
-import type { Database } from "@/integrations/supabase/types";
+import type { Database, Json } from "@/integrations/supabase/types";
 import {
   createLovableResponsesProvider,
   getLovableAiGatewayRunId,
@@ -79,7 +79,7 @@ export const Route = createFileRoute("/api/chat")({
               user_id: userId,
               role: "user",
               content: newestText,
-              parts: newestUser.parts as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
+              parts: newestUser.parts as unknown as Json,
             },
             { onConflict: "id", ignoreDuplicates: true },
           );
@@ -157,7 +157,7 @@ export const Route = createFileRoute("/api/chat")({
                   user_id: userId,
                   role: "assistant",
                   content,
-                  parts: responseMessage.parts as Database["public"]["Tables"]["ai_messages"]["Insert"]["parts"],
+                  parts: responseMessage.parts as unknown as Json,
                 },
                 { onConflict: "id", ignoreDuplicates: true },
               );
