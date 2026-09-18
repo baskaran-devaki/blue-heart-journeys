@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ExternalLink, Heart, Play, Send, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { GlassCard, CardTitle } from "@/components/bhg/GlassCard";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,14 @@ export function FriendsStatus() {
   const { data: profiles = [] } = useQuery(profilesQuery);
   const [videoUrl, setVideoUrl] = useState("");
   const [title, setTitle] = useState("");
+  const [now, setNow] = useState(() => Date.now());
   const profilesById = new Map(profiles.map((profile) => [profile.id, profile]));
+  const activeStatuses = data.statuses.filter((status) => new Date(status.expires_at).getTime() > now);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const shareVideo = useMutation({
     mutationFn: async () => {
@@ -78,11 +85,11 @@ export function FriendsStatus() {
         </div>
       </GlassCard>
 
-      {data.statuses.length === 0 ? (
+      {activeStatuses.length === 0 ? (
         <GlassCard className="p-6 text-center text-sm text-muted-foreground">இப்போது active status எதுவும் இல்லை.</GlassCard>
       ) : (
         <div className="grid gap-3 md:grid-cols-2">
-          {data.statuses.map((status) => {
+          {activeStatuses.map((status) => {
             const profile = profilesById.get(status.user_id);
             const likes = data.likes.filter((like) => like.status_id === status.id);
             const liked = !!user && likes.some((like) => like.user_id === user.id);

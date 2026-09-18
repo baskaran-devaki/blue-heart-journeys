@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/bhg/AppShell";
@@ -22,6 +22,7 @@ export const Route = createFileRoute("/_authenticated/chat")({
 });
 
 function ChatLanding() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -46,6 +47,7 @@ function ChatLanding() {
   });
 
   useEffect(() => {
+    if (pathname !== "/chat") return;
     if (isLoading || started.current) return;
     started.current = true;
     const latest = threads[0];
@@ -54,7 +56,9 @@ function ChatLanding() {
     } else {
       createThread.mutate();
     }
-  }, [createThread, isLoading, navigate, threads]);
+  }, [createThread, isLoading, navigate, pathname, threads]);
+
+  if (pathname !== "/chat") return <Outlet />;
 
   return (
     <AppShell>
