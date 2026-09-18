@@ -43,6 +43,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hydratedMessages = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
   const { data: threads = [] } = useQuery(aiThreadsQuery);
@@ -60,7 +61,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
       }),
     [],
   );
-  const { messages, sendMessage, stop, status, error } = useChat({
+  const { messages, setMessages, sendMessage, stop, status, error } = useChat({
     id: threadId,
     messages: initialMessages,
     transport,
@@ -75,6 +76,12 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   useEffect(() => {
     textareaRef.current?.focus();
   }, [threadId]);
+
+  useEffect(() => {
+    if (isLoading || hydratedMessages.current) return;
+    hydratedMessages.current = true;
+    setMessages(initialMessages);
+  }, [initialMessages, isLoading, setMessages]);
 
   const createThread = useMutation({
     mutationFn: async () => {
