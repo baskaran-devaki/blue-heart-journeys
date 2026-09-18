@@ -109,10 +109,13 @@ export const Route = createFileRoute("/api/chat")({
               : [{ type: "text" as const, text: row.content }],
           }));
 
-          if (thread.title === "புதிய உரையாடல்") {
-            const title = newestText.replace(/\s+/g, " ").slice(0, 48);
-            await supabase.from("ai_threads").update({ title }).eq("id", thread.id);
-          }
+          const threadUpdate = {
+            updated_at: new Date().toISOString(),
+            ...(thread.title === "புதிய உரையாடல்"
+              ? { title: newestText.replace(/\s+/g, " ").slice(0, 48) }
+              : {}),
+          };
+          await supabase.from("ai_threads").update(threadUpdate).eq("id", thread.id);
 
           const apiKey = process.env["LOVABLE_API_KEY"];
           if (!apiKey) return new Response("Blue Heart AI is not configured", { status: 500 });
@@ -162,6 +165,10 @@ export const Route = createFileRoute("/api/chat")({
                 { onConflict: "id", ignoreDuplicates: true },
               );
               if (error) console.error("Failed to save AI message", error.message);
+              await supabase
+                .from("ai_threads")
+                .update({ updated_at: new Date().toISOString() })
+                .eq("id", thread.id);
             },
           });
 
