@@ -191,7 +191,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
           <Bot className="size-5 text-primary" />
           <div className="min-w-0">
             <h1 className="truncate font-bold text-foreground">BLUE HEART AI</h1>
-            <p className="truncate text-xs text-muted-foreground">தமிழில் கேளுங்கள் · தனிப்பட்ட உரையாடல்</p>
+            <p className="truncate text-xs text-muted-foreground">தனிப்பட்ட உரையாடல்</p>
           </div>
         </header>
 
@@ -201,7 +201,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
               <ConversationEmptyState
                 icon={<Bot className="size-8 text-primary" />}
                 title="வணக்கம்! நான் BLUE HEART AI"
-                description="பயணம், இடங்கள், வழித்தடம், பட்ஜெட், coding அல்லது பொதுக் கேள்விகளை கேளுங்கள்."
+                description="உங்கள் கேள்விகளை கேளுங்கள்."
               />
             )}
             {messages.map((message) => (
