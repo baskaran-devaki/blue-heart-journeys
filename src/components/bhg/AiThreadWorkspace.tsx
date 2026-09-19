@@ -28,6 +28,16 @@ import { aiMessagesQuery, aiThreadsQuery } from "@/lib/queries";
 
 type AiMessageRow = Database["public"]["Tables"]["ai_messages"]["Row"];
 
+const NATIVE_APP_PROTOCOLS = new Set(["capacitor:", "ionic:"]);
+const BLUE_HEART_AI_API = "https://blueheartguys.lovable.app/api/chat";
+
+function getBlueHeartAiApiUrl() {
+  if (typeof window === "undefined") return "/api/chat";
+  return NATIVE_APP_PROTOCOLS.has(window.location.protocol) || window.location.hostname === "localhost"
+    ? BLUE_HEART_AI_API
+    : "/api/chat";
+}
+
 function toMessage(row: AiMessageRow): UIMessage {
   return {
     id: row.id,
@@ -52,7 +62,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
-        api: "/api/chat",
+        api: getBlueHeartAiApiUrl(),
         headers: async () => {
           const { data } = await supabase.auth.getSession();
           return data.session ? { Authorization: `Bearer ${data.session.access_token}` } : {};

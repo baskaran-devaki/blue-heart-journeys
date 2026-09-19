@@ -10,6 +10,29 @@ import {
 
 type ChatBody = { id?: unknown; messages?: unknown };
 
+const MOBILE_APP_ORIGINS = new Set([
+  "capacitor://localhost",
+  "ionic://localhost",
+  "http://localhost",
+  "https://localhost",
+]);
+
+function mobileCorsHeaders(request: Request) {
+  const origin = request.headers.get("origin");
+  if (!origin || !MOBILE_APP_ORIGINS.has(origin)) return {};
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization, Content-Type, X-Lovable-AIG-Run-ID",
+    "Access-Control-Expose-Headers": "X-Lovable-AIG-Run-ID",
+    Vary: "Origin",
+  };
+}
+
+function chatResponse(request: Request, body: BodyInit | null, status: number) {
+  return new Response(body, { status, headers: mobileCorsHeaders(request) });
+}
+
 const messageText = (message: UIMessage) =>
   message.parts
     .filter((part) => part.type === "text")
@@ -44,19 +67,21 @@ function memberClient(request: Request) {
 export const Route = createFileRoute("/api/chat")({
   server: {
     handlers: {
+      OPTIONS: async ({ request }) =>
+        new Response(null, { status: 204, headers: mobileCorsHeaders(request) }),
       POST: async ({ request }) => {
         try {
           const supabase = memberClient(request);
-          if (!supabase) return new Response("Sign in required", { status: 401 });
+          if (!supabase) return chatResponse(request, "Sign in required", 401);
 
           const token = request.headers.get("authorization")?.replace("Bearer ", "") ?? "";
           const { data: claims, error: authError } = await supabase.auth.getClaims(token);
           const userId = claims?.claims?.sub;
-          if (authError || !userId) return new Response("Sign in required", { status: 401 });
+          if (authError || !userId) return chatResponse(request, "Sign in required", 401);
 
           const body = (await request.json()) as ChatBody;
           if (typeof body.id !== "string" || !Array.isArray(body.messages)) {
-            return new Response("Conversation and messages are required", { status: 400 });
+            return chatResponse(request, "Conversation and messages are required", 400);
           }
 
           const { data: thread, error: threadError } = await supabase
@@ -65,12 +90,12 @@ export const Route = createFileRoute("/api/chat")({
             .eq("id", body.id)
             .eq("user_id", userId)
             .maybeSingle();
-          if (threadError || !thread) return new Response("Conversation not found", { status: 404 });
+          if (threadError || !thread) return chatResponse(request, "Conversation not found", 404);
 
           const incoming = body.messages as UIMessage[];
           const newestUser = [...incoming].reverse().find((message) => message.role === "user");
           const newestText = newestUser ? messageText(newestUser) : "";
-          if (!newestUser || !newestText) return new Response("Message is required", { status: 400 });
+          if (!newestUser || !newestText) return chatResponse(request, "Message is required", 400);
 
           const { error: saveUserError } = await supabase.from("ai_messages").upsert(
             {
@@ -83,7 +108,7 @@ export const Route = createFileRoute("/api/chat")({
             },
             { onConflict: "id", ignoreDuplicates: true },
           );
-          if (saveUserError) return new Response(saveUserError.message, { status: 400 });
+          if (saveUserError) return chatResponse(request, saveUserError.message, 400);
 
           const [{ data: savedRows, error: rowsError }, { data: trip }] = await Promise.all([
             supabase
@@ -99,7 +124,7 @@ export const Route = createFileRoute("/api/chat")({
               .limit(1)
               .maybeSingle(),
           ]);
-          if (rowsError) return new Response(rowsError.message, { status: 400 });
+          if (rowsError) return chatResponse(request, rowsError.message, 400);
 
           const history: UIMessage[] = (savedRows ?? []).map((row) => ({
             id: row.id,
@@ -118,7 +143,7 @@ export const Route = createFileRoute("/api/chat")({
           await supabase.from("ai_threads").update(threadUpdate).eq("id", thread.id);
 
           const apiKey = process.env["LOVABLE_API_KEY"];
-          if (!apiKey) return new Response("Blue Heart AI is not configured", { status: 500 });
+          if (!apiKey) return chatResponse(request, "Blue Heart AI is not configured", 500);
 
           const initialRunId = getLovableAiGatewayRunId(request);
           const { provider, runIdFetch } = createLovableResponsesProvider(apiKey, initialRunId);
@@ -147,6 +172,7 @@ export const Route = createFileRoute("/api/chat")({
           const response = result.toUIMessageStreamResponse({
             originalMessages: history,
             sendReasoning: true,
+            headers: mobileCorsHeaders(request),
             onError: (error) =>
               error instanceof Error ? error.message : "Blue Heart AI could not answer right now",
             onFinish: async ({ responseMessage, isAborted }) => {
@@ -175,12 +201,14 @@ export const Route = createFileRoute("/api/chat")({
           return withLovableAiGatewayRunIdHeader(response, runIdFetch);
         } catch (error) {
           if (error instanceof DOMException && error.name === "AbortError") {
-            return new Response("Cancelled", { status: 499 });
+            return chatResponse(request, "Cancelled", 499);
           }
           console.error("Blue Heart AI route error", error);
-          return new Response(error instanceof Error ? error.message : "Blue Heart AI failed", {
-            status: 500,
-          });
+          return chatResponse(
+            request,
+            error instanceof Error ? error.message : "Blue Heart AI failed",
+            500,
+          );
         }
       },
     },
