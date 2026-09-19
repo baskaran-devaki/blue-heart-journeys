@@ -78,10 +78,9 @@ function SettingsPage() {
       const path = `${user.id}/avatar-${Date.now()}-${file.name.replace(/[^\w.-]/g, "")}`;
       const { error } = await supabase.storage.from("memories").upload(path, file, { upsert: true });
       if (error) throw error;
-      const { data } = await supabase.storage.from("memories").createSignedUrl(path, 60 * 60 * 24 * 365);
       const { error: pErr } = await supabase
         .from("profiles")
-        .update({ avatar_url: data?.signedUrl ?? null })
+        .update({ avatar_url: path })
         .eq("id", user.id);
       if (pErr) throw pErr;
     },

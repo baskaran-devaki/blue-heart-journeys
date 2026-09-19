@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { shortLivedAvatarUrl } from "@/lib/avatar";
 
 export type MemberStatus = "loading" | "anonymous" | "not_approved" | "member" | "admin";
 
@@ -47,7 +48,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select("id, email, phone, full_name, avatar_url, dob, blood_group, address, active")
         .eq("id", current.user.id)
         .maybeSingle();
-      setProfile(data ?? null);
+      setProfile(
+        data
+          ? { ...data, avatar_url: await shortLivedAvatarUrl(data.avatar_url) }
+          : null,
+      );
       setStatus(role);
     } else {
       setProfile(null);

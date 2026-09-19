@@ -1,5 +1,6 @@
 import { queryOptions } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveAvatarRows } from "@/lib/avatar";
 
 export const currentTripQuery = queryOptions({
   queryKey: ["trip", "current"],
@@ -91,7 +92,7 @@ export const profilesQuery = queryOptions({
         address: i.address,
         active: i.active,
       }));
-    return [...rows, ...pending].sort((a, b) =>
+    return (await resolveAvatarRows([...rows, ...pending])).sort((a, b) =>
       (a.full_name || "").localeCompare(b.full_name || ""),
     );
   },
@@ -186,7 +187,7 @@ export const memberInvitesQuery = queryOptions({
       .select("*")
       .order("full_name");
     if (error) throw error;
-    return data ?? [];
+    return resolveAvatarRows(data ?? []);
   },
 });
 
