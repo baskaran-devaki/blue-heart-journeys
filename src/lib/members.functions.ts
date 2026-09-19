@@ -3,15 +3,13 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 type ProvisionInput = {
   email: string;
-  phone: string;
   full_name?: string;
   resetPassword?: boolean;
 };
 
 /**
- * Creates (or re-syncs) the login account for a member the admin added.
- * The member's mobile number is used as the initial password – Supabase
- * stores it hashed, it is never persisted in our own tables.
+ * Invites a new member without assigning a predictable password.
+ * Existing members receive the normal password-reset email from the client.
  */
 export const provisionMemberAccount = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
@@ -24,11 +22,7 @@ export const provisionMemberAccount = createServerFn({ method: "POST" })
     if (!isAdmin) throw new Error("Forbidden");
 
     const email = data.email.trim().toLowerCase();
-    const password = data.phone.replace(/\D/g, "");
     if (!email.includes("@")) throw new Error("Valid email required");
-    if (password.length < 6) {
-      throw new Error("Mobile number needs at least 6 digits to be the default password");
-    }
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -45,19 +39,15 @@ export const provisionMemberAccount = createServerFn({ method: "POST" })
     }
 
     if (!existingId) {
-      const { error } = await supabaseAdmin.auth.admin.createUser({
-        email,
-        password,
-        email_confirm: true,
-        user_metadata: { full_name: data.full_name ?? "" },
+      const { error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        redirectTo: "https://blueheartguys.lovable.app/reset-password",
+        data: { full_name: data.full_name ?? "" },
       });
       if (error) throw error;
       return { created: true, reset: false };
     }
 
     if (data.resetPassword) {
-      const { error } = await supabaseAdmin.auth.admin.updateUserById(existingId, { password });
-      if (error) throw error;
       return { created: false, reset: true };
     }
 

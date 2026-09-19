@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth";
 import { provisionMemberAccount } from "@/lib/members.functions";
+import { avatarStoragePath } from "@/lib/avatar";
 import {
   activeLiveQuery,
   allTripsQuery,
@@ -153,7 +154,7 @@ function AdminPage() {
         address: member.address.trim(),
         role: member.role,
         active: member.active,
-        avatar_url: member.avatar_url.trim() || null,
+        avatar_url: avatarStoragePath(member.avatar_url),
         invited_at: new Date().toISOString(),
       };
       if (member.id) {
@@ -176,9 +177,8 @@ function AdminPage() {
           ...(row.avatar_url ? { avatar_url: row.avatar_url } : {}),
         })
         .eq("email", row.email);
-      // create the login account – mobile number is the initial password
       const res = await provision({
-        data: { email: row.email, phone: row.phone, full_name: row.full_name },
+        data: { email: row.email, full_name: row.full_name },
       });
       return res;
     },
@@ -188,7 +188,7 @@ function AdminPage() {
       void qc.invalidateQueries({ queryKey: ["profiles"] });
       toast.success(
         res?.created
-          ? "உறுப்பினர் சேமிக்கப்பட்டது ✅ Login: email + கைபேசி எண் (password)"
+          ? "உறுப்பினர் சேமிக்கப்பட்டார் ✅ அழைப்புக் கடிதம் அனுப்பப்பட்டது"
           : "உறுப்பினர் சேமிக்கப்பட்டது ✅",
       );
     },
@@ -208,9 +208,14 @@ function AdminPage() {
   });
 
   const resetPassword = useMutation({
-    mutationFn: async (m: { email: string; phone: string }) =>
-      provision({ data: { email: m.email, phone: m.phone, resetPassword: true } }),
-    onSuccess: () => toast.success("Password கைபேசி எண்ணுக்கு மீட்டமைக்கப்பட்டது 🔐"),
+    mutationFn: async (m: { email: string }) => {
+      await provision({ data: { email: m.email, resetPassword: true } });
+      const { error } = await supabase.auth.resetPasswordForEmail(m.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => toast.success("Password reset email அனுப்பப்பட்டது 🔐"),
     onError: (e: Error) => toast.error(e.message),
   });
 
@@ -222,7 +227,7 @@ function AdminPage() {
       if (error) throw error;
       const { data } = await supabase.storage
         .from("memories")
-        .createSignedUrl(path, 60 * 60 * 24 * 365);
+        .createSignedUrl(path, 60 * 60);
       return data?.signedUrl ?? "";
     },
     onSuccess: (url) => {
@@ -560,7 +565,7 @@ function AdminPage() {
               ) : null}
             </div>
             <p className="tamil mt-2 text-[10px] text-muted-foreground">
-              உறுப்பினர் இதே email + password மூலம் உள்நுழைந்தால் அவரது கணக்கு தானாக இணைக்கப்படும்.
+              புதிய உறுப்பினருக்கு பாதுகாப்பான password அமைக்கும் அழைப்புக் கடிதம் அனுப்பப்படும்.
             </p>
           </GlassCard>
 
@@ -598,11 +603,11 @@ function AdminPage() {
                   </div>
                   <div className="flex shrink-0 gap-1">
                     <button
-                      onClick={() => resetPassword.mutate({ email: m.email, phone: m.phone })}
+                      onClick={() => resetPassword.mutate({ email: m.email })}
                       disabled={resetPassword.isPending}
                       className="grid size-8 place-items-center rounded-full border border-glass-border text-warning disabled:opacity-50"
-                      aria-label="Reset password to mobile number"
-                      title="Reset password to mobile number"
+                      aria-label="Send password reset email"
+                      title="Send password reset email"
                     >
                       <KeyRound className="size-3.5" />
                     </button>
