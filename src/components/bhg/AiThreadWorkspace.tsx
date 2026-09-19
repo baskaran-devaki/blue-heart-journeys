@@ -33,7 +33,12 @@ const BLUE_HEART_AI_API = "https://blueheartguys.lovable.app/api/chat";
 
 function getBlueHeartAiApiUrl() {
   if (typeof window === "undefined") return "/api/chat";
-  return NATIVE_APP_PROTOCOLS.has(window.location.protocol) || window.location.hostname === "localhost"
+  const capacitor = (window as Window & {
+    Capacitor?: { isNativePlatform?: () => boolean };
+  }).Capacitor;
+  const isNative =
+    NATIVE_APP_PROTOCOLS.has(window.location.protocol) || capacitor?.isNativePlatform?.() === true;
+  return isNative
     ? BLUE_HEART_AI_API
     : "/api/chat";
 }
