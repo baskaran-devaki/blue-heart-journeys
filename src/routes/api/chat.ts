@@ -2,11 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 import { convertToModelMessages, streamText, type UIMessage } from "ai";
 import type { Database, Json } from "@/integrations/supabase/types";
-import {
-  createLovableResponsesProvider,
-  getLovableAiGatewayRunId,
-  withLovableAiGatewayRunIdHeader,
-} from "@/lib/ai-gateway.server";
+import { createOpenAI } from "@ai-sdk/openai";
 
 type ChatBody = { id?: unknown; messages?: unknown };
 
@@ -142,33 +138,22 @@ export const Route = createFileRoute("/api/chat")({
           };
           await supabase.from("ai_threads").update(threadUpdate).eq("id", thread.id);
 
-          const apiKey = process.env["LOVABLE_API_KEY"];
+          const apiKey = process.env["OPENAI_API_KEY"];
           if (!apiKey) return chatResponse(request, "Blue Heart AI is not configured", 500);
 
-          const initialRunId = getLovableAiGatewayRunId(request);
-          const { provider, runIdFetch } = createLovableResponsesProvider(apiKey, initialRunId);
+          const openai = createOpenAI({ apiKey });
           const tripContext = trip
             ? `Current trip plan: ${JSON.stringify(trip)}`
             : "There is no current or upcoming trip plan.";
 
           const result = streamText({
-            model: provider.responses("openai/gpt-6-astra"),
+            model: openai.responses("gpt-5.6-luna"),
             system:
               "You are BLUE HEART AI, the private assistant for the BLUE HEART GUYS friends group. Reply naturally in Tamil first, while keeping code, technical terms, place names, and requested languages accurate. Help with general questions, coding, travel, places, routes, schedules, and budgets. Be warm, practical, concise, and honest. Use the supplied trip plan only when relevant; never invent missing trip facts. " +
               tripContext,
             messages: await convertToModelMessages(history),
             abortSignal: request.signal,
-            providerOptions: {
-              openai: {
-                forceReasoning: true,
-                reasoningEffort: "medium",
-                reasoningSummary: "auto",
-                store: false,
-                include: ["reasoning.encrypted_content"],
-              },
-            },
           });
-
           const response = result.toUIMessageStreamResponse({
             originalMessages: history,
             sendReasoning: true,
@@ -198,7 +183,7 @@ export const Route = createFileRoute("/api/chat")({
             },
           });
 
-          return withLovableAiGatewayRunIdHeader(response, runIdFetch);
+          return response;
         } catch (error) {
           if (error instanceof DOMException && error.name === "AbortError") {
             return chatResponse(request, "Cancelled", 499);
