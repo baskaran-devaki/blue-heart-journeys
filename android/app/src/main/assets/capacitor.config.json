@@ -1,0 +1,9 @@
+{
+	"appId": "com.blueheartguys.journeys",
+	"appName": "Blue Heart Guys",
+	"webDir": "dist",
+	"server": {
+		"url": "https://blue-heart-journeys.vercel.app/",
+		"cleartext": false
+	}
+}
