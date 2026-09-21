@@ -374,7 +374,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
             className="mx-auto max-w-3xl"
             onSubmit={async ({ text }) => {
               const value = text.trim();
-              if (!value || busy) return;
+              if (!value || status !== "ready") return;
               setInput("");
               await sendMessage({ text: value });
               textareaRef.current?.focus();
@@ -387,7 +387,7 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
               placeholder="தமிழில் கேளுங்கள்..."
             />
             <PromptInputFooter className="justify-end">
-              <PromptInputSubmit status={status} onStop={stop} disabled={!input.trim() && !busy} />
+              <PromptInputSubmit status={status} onStop={stop} disabled={!input.trim() && status === "ready"} />
             </PromptInputFooter>
           </PromptInput>
         </div>
