@@ -89,6 +89,9 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
     onError: (chatError) => toast.error(chatError.message),
   });
   const stopAudio = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
     audioRef.current?.pause();
     audioRef.current = null;
 
@@ -103,83 +106,47 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
 
   const playAssistantAudio = async (message: UIMessage) => {
     const text = getMessageText(message);
-    if (!text) return;
+    if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
+      toast.error("Tamil voice is not available on this device");
+      return;
+    }
 
     stopAudio();
     setAudioLoadingMessageId(message.id);
 
-    try {
-      const { data } = await supabase.auth.getSession();
-      if (!data.session) {
-        throw new Error("Sign in required");
-      }
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "ta-IN";
+    utterance.rate = 0.92;
+    utterance.pitch = 1.05;
 
-      const response = await fetch("/api/tts", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${data.session.access_token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ text }),
-      });
+    const voices = window.speechSynthesis.getVoices();
+    const tamilVoice =
+      voices.find((voice) => voice.lang.toLowerCase() === "ta-in") ??
+      voices.find((voice) => voice.lang.toLowerCase().startsWith("ta"));
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || "Voice generation failed");
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-
-      audioUrlRef.current = url;
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        if (audioUrlRef.current === url) {
-          URL.revokeObjectURL(url);
-          audioUrlRef.current = null;
-        }
-        audioRef.current = null;
-        setPlayingMessageId(null);
-        setAudioLoadingMessageId(null);
-      };
-
-      audio.onerror = () => {
-        if (audioUrlRef.current === url) {
-          URL.revokeObjectURL(url);
-          audioUrlRef.current = null;
-        }
-        audioRef.current = null;
-        setPlayingMessageId(null);
-        setAudioLoadingMessageId(null);
-        toast.error("Audio playback failed");
-      };
-
-      setAudioLoadingMessageId(null);
-      await audio.play();
-      setPlayingMessageId(message.id);
-    } catch (error) {
-      setAudioLoadingMessageId(null);
-      setPlayingMessageId(null);
-
-      if (audioUrlRef.current) {
-        URL.revokeObjectURL(audioUrlRef.current);
-        audioUrlRef.current = null;
-      }
-
-      audioRef.current = null;
-
-      if (error instanceof DOMException && error.name === "NotAllowedError") {
-        toast.error("Audio autoplay was blocked. Tap Replay to play.");
-      } else {
-        toast.error(
-          error instanceof Error ? error.message : "Voice playback failed",
-        );
-      }
+    if (tamilVoice) {
+      utterance.voice = tamilVoice;
     }
+
+    utterance.onstart = () => {
+      setAudioLoadingMessageId(null);
+      setPlayingMessageId(message.id);
+    };
+
+    utterance.onend = () => {
+      setPlayingMessageId(null);
+      setAudioLoadingMessageId(null);
+    };
+
+    utterance.onerror = () => {
+      setPlayingMessageId(null);
+      setAudioLoadingMessageId(null);
+      toast.error("Voice playback failed");
+    };
+
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utterance);
   };
-  const busy = status === "submitted" || status === "streaming";
   const lastAutoPlayedMessageId = useRef<string | null>(null);
 
   useEffect(() => {
