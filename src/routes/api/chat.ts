@@ -151,12 +151,12 @@ export const Route = createFileRoute("/api/chat")({
             system:
               "You are BLUE HEART AI, the private assistant for the BLUE HEART GUYS friends group. Reply naturally in Tamil first, while keeping code, technical terms, place names, and requested languages accurate. Help with general questions, coding, travel, places, routes, schedules, and budgets. Be warm, practical, concise, and honest. Use the supplied trip plan only when relevant; never invent missing trip facts. " +
               tripContext,
-            messages: await convertToModelMessages(history),
+            messages: await convertToModelMessages(history.map((message) => ({ ...message, parts: message.parts.filter((part) => part.type === "text") }))),
             abortSignal: request.signal,
           });
           const response = result.toUIMessageStreamResponse({
             originalMessages: history,
-            sendReasoning: true,
+            sendReasoning: false,
             headers: mobileCorsHeaders(request),
             onError: (error) =>
               error instanceof Error ? error.message : "Blue Heart AI could not answer right now",
