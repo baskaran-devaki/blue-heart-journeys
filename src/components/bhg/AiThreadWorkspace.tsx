@@ -2,7 +2,7 @@ import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bot, Menu, Plus, Share2, Trash2, X } from "lucide-react";
+import { Bot, Copy, Menu, Plus, RotateCcw, Square, Trash2, Volume2, VolumeX, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -32,6 +32,14 @@ function getBlueHeartAiApiUrl() {
   return "/api/chat";
 }
 
+function getMessageText(message: UIMessage) {
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("")
+    .trim();
+}
+
 function toMessage(row: AiMessageRow): UIMessage {
   return {
     id: row.id,
@@ -50,6 +58,11 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   const hydratedMessages = useRef(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [input, setInput] = useState("");
+  const [audioEnabled, setAudioEnabled] = useState(true);
+  const [playingMessageId, setPlayingMessageId] = useState<string | null>(null);
+  const [audioLoadingMessageId, setAudioLoadingMessageId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioUrlRef = useRef<string | null>(null);
   const { data: threads = [] } = useQuery(aiThreadsQuery);
   const { data: rows = [], isLoading } = useQuery(aiMessagesQuery(threadId));
   const initialMessages = useMemo(() => rows.map(toMessage), [rows]);
@@ -75,7 +88,131 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
     },
     onError: (chatError) => toast.error(chatError.message),
   });
+  const stopAudio = () => {
+    audioRef.current?.pause();
+    audioRef.current = null;
+
+    if (audioUrlRef.current) {
+      URL.revokeObjectURL(audioUrlRef.current);
+      audioUrlRef.current = null;
+    }
+
+    setPlayingMessageId(null);
+    setAudioLoadingMessageId(null);
+  };
+
+  const playAssistantAudio = async (message: UIMessage) => {
+    const text = getMessageText(message);
+    if (!text) return;
+
+    stopAudio();
+    setAudioLoadingMessageId(message.id);
+
+    try {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) {
+        throw new Error("Sign in required");
+      }
+
+      const response = await fetch("/api/tts", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Voice generation failed");
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+
+      audioUrlRef.current = url;
+      audioRef.current = audio;
+
+      audio.onended = () => {
+        if (audioUrlRef.current === url) {
+          URL.revokeObjectURL(url);
+          audioUrlRef.current = null;
+        }
+        audioRef.current = null;
+        setPlayingMessageId(null);
+        setAudioLoadingMessageId(null);
+      };
+
+      audio.onerror = () => {
+        if (audioUrlRef.current === url) {
+          URL.revokeObjectURL(url);
+          audioUrlRef.current = null;
+        }
+        audioRef.current = null;
+        setPlayingMessageId(null);
+        setAudioLoadingMessageId(null);
+        toast.error("Audio playback failed");
+      };
+
+      setAudioLoadingMessageId(null);
+      await audio.play();
+      setPlayingMessageId(message.id);
+    } catch (error) {
+      setAudioLoadingMessageId(null);
+      setPlayingMessageId(null);
+
+      if (audioUrlRef.current) {
+        URL.revokeObjectURL(audioUrlRef.current);
+        audioUrlRef.current = null;
+      }
+
+      audioRef.current = null;
+
+      if (error instanceof DOMException && error.name === "NotAllowedError") {
+        toast.error("Audio autoplay was blocked. Tap Replay to play.");
+      } else {
+        toast.error(
+          error instanceof Error ? error.message : "Voice playback failed",
+        );
+      }
+    }
+  };
   const busy = status === "submitted" || status === "streaming";
+  const lastAutoPlayedMessageId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (isLoading || !hydratedMessages.current || status !== "ready") return;
+
+    const latestAssistant = [...messages]
+      .reverse()
+      .find((message) => message.role === "assistant");
+
+    if (!latestAssistant) return;
+
+    if (lastAutoPlayedMessageId.current === null) {
+      lastAutoPlayedMessageId.current = latestAssistant.id;
+      return;
+    }
+
+    if (latestAssistant.id === lastAutoPlayedMessageId.current) return;
+
+    lastAutoPlayedMessageId.current = latestAssistant.id;
+
+    if (audioEnabled) {
+      void playAssistantAudio(latestAssistant);
+    }
+  }, [messages, status, audioEnabled, isLoading]);
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem('bhg-ai-audio');
+    if (saved === 'off') setAudioEnabled(false);
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem('bhg-ai-audio', audioEnabled ? 'on' : 'off');
+  }, [audioEnabled]);
 
   useEffect(() => {
     textareaRef.current?.focus();
@@ -114,30 +251,6 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
     onSuccess: async (_, id) => {
       await queryClient.invalidateQueries({ queryKey: ["ai-threads"] });
       if (id === threadId) void navigate({ to: "/chat" });
-    },
-    onError: (mutationError: Error) => toast.error(mutationError.message),
-  });
-
-  const shareAnswer = useMutation({
-    mutationFn: async (message: UIMessage) => {
-      if (!user) throw new Error("Sign in required");
-      const content = message.parts
-        .filter((part) => part.type === "text")
-        .map((part) => part.text)
-        .join("")
-        .trim();
-      if (!content) throw new Error("பகிர பதில் இல்லை");
-      const { error: shareError } = await supabase.from("friend_statuses").insert({
-        status_type: "ai",
-        content,
-        ai_message_id: message.id,
-        user_id: user.id,
-      });
-      if (shareError) throw shareError;
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ["friend-statuses"] });
-      toast.success("Home-க்கு 24 மணி நேரம் பகிரப்பட்டது 💙");
     },
     onError: (mutationError: Error) => toast.error(mutationError.message),
   });
@@ -197,6 +310,21 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
             <h1 className="truncate font-bold text-foreground">BLUE HEART AI</h1>
             <p className="truncate text-xs text-muted-foreground">தனிப்பட்ட உரையாடல்</p>
           </div>
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            className="ml-auto"
+            onClick={() => {
+              setAudioEnabled((enabled) => {
+                if (enabled) stopAudio();
+                return !enabled;
+              });
+            }}
+            title={audioEnabled ? "Audio ON" : "Audio OFF"}
+            aria-label={audioEnabled ? "Turn audio off" : "Turn audio on"}
+          >
+            {audioEnabled ? <Volume2 className="size-5" /> : <VolumeX className="size-5" />}
+          </Button>
         </header>
 
         <Conversation className="min-h-0 flex-1">
@@ -223,18 +351,49 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
                     }
                     return null;
                   })}
-                  {message.role === "assistant" && message.parts.some((part) => part.type === "text" && part.text.trim()) && (
+                </MessageContent>
+                {message.role === "assistant" && getMessageText(message) && (
+                  <div className="mt-2 flex items-center gap-1">
                     <Button
+                      type="button"
                       variant="ghost"
                       size="sm"
-                      className="mt-2 gap-1.5 text-xs text-muted-foreground"
-                      onClick={() => shareAnswer.mutate(message)}
-                      disabled={shareAnswer.isPending}
+                      className="h-8 gap-1.5 text-xs"
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(getMessageText(message));
+                        toast.success("Text copied");
+                      }}
                     >
-                      <Share2 className="size-3.5" /> Share to Home
+                      <Copy className="size-3.5" />
+                      Copy Text
                     </Button>
-                  )}
-                </MessageContent>
+
+                    {playingMessageId === message.id ? (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        onClick={stopAudio}
+                      >
+                        <Square className="size-3.5" />
+                        Stop
+                      </Button>
+                    ) : (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 gap-1.5 text-xs"
+                        disabled={audioLoadingMessageId === message.id}
+                        onClick={() => void playAssistantAudio(message)}
+                      >
+                        <RotateCcw className="size-3.5" />
+                        {audioLoadingMessageId === message.id ? "Loading..." : "Replay"}
+                      </Button>
+                    )}
+                  </div>
+                )}
               </Message>
             ))}
             {status === "submitted" && <Shimmer className="text-sm">சிந்திக்கிறேன்...</Shimmer>}
