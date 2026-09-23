@@ -1,3 +1,6 @@
+import { TextToSpeech } from "@capacitor-community/text-to-speech";
+import { Capacitor, registerPlugin } from "@capacitor/core";
+const SherpaTts = registerPlugin<{ speak(options: { text: string; speed?: number }): Promise<void>; stop(): Promise<void>; }>("SherpaTts");
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -92,6 +95,10 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
+
+    void TextToSpeech.stop().catch(() => undefined);
+    void SherpaTts.stop().catch(() => undefined);
+
     audioRef.current?.pause();
     audioRef.current = null;
 
@@ -105,48 +112,74 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
   };
 
   const playAssistantAudio = async (message: UIMessage) => {
-    const text = getMessageText(message);
-    if (!text || typeof window === "undefined" || !("speechSynthesis" in window)) {
-      toast.error("Tamil voice is not available on this device");
+    const text = getMessageText(message).trim();
+
+    if (!text) {
+      toast.error("No text available for voice playback");
       return;
     }
 
     stopAudio();
     setAudioLoadingMessageId(message.id);
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = "ta-IN";
-    utterance.rate = 0.92;
-    utterance.pitch = 1.05;
+    try {
+      if (Capacitor.isNativePlatform()) { console.log("[BHG TTS] Native branch reached"); setAudioLoadingMessageId(null);
+        setPlayingMessageId(message.id);
 
-    const voices = window.speechSynthesis.getVoices();
-    const tamilVoice =
-      voices.find((voice) => voice.lang.toLowerCase() === "ta-in") ??
-      voices.find((voice) => voice.lang.toLowerCase().startsWith("ta"));
+        await SherpaTts.speak({ text, speed: 0.92 });
 
-    if (tamilVoice) {
-      utterance.voice = tamilVoice;
+        setPlayingMessageId(null);
+        return;
+      }
+
+      if (
+        typeof window === "undefined" ||
+        !("speechSynthesis" in window)
+      ) {
+        throw new Error("Speech synthesis is not available");
+      }
+
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "ta-IN";
+      utterance.rate = 0.92;
+      utterance.pitch = 1.05;
+
+      const voices = window.speechSynthesis.getVoices();
+      const tamilVoice =
+        voices.find((voice) => voice.lang.toLowerCase() === "ta-in") ??
+        voices.find((voice) => voice.lang.toLowerCase().startsWith("ta"));
+
+      if (tamilVoice) {
+        utterance.voice = tamilVoice;
+      }
+
+      utterance.onstart = () => {
+        setAudioLoadingMessageId(null);
+        setPlayingMessageId(message.id);
+      };
+
+      utterance.onend = () => {
+        setPlayingMessageId(null);
+        setAudioLoadingMessageId(null);
+      };
+
+      utterance.onerror = () => {
+        setPlayingMessageId(null);
+        setAudioLoadingMessageId(null);
+        toast.error("Voice playback failed");
+      };
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    } catch (error) {
+      setPlayingMessageId(null);
+      setAudioLoadingMessageId(null);
+      toast.error(
+        error instanceof Error ? error.message : "Voice playback failed",
+      );
     }
-
-    utterance.onstart = () => {
-      setAudioLoadingMessageId(null);
-      setPlayingMessageId(message.id);
-    };
-
-    utterance.onend = () => {
-      setPlayingMessageId(null);
-      setAudioLoadingMessageId(null);
-    };
-
-    utterance.onerror = () => {
-      setPlayingMessageId(null);
-      setAudioLoadingMessageId(null);
-      toast.error("Voice playback failed");
-    };
-
-    window.speechSynthesis.cancel();
-    window.speechSynthesis.speak(utterance);
   };
+
   const lastAutoPlayedMessageId = useRef<string | null>(null);
 
   useEffect(() => {
@@ -395,3 +428,5 @@ export function AiThreadWorkspace({ threadId }: { threadId: string }) {
     </div>
   );
 }
+
+

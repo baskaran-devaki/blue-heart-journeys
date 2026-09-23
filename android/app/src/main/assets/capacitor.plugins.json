@@ -1,1 +1,10 @@
-[]
+﻿[
+        {
+                "pkg": "@capacitor-community/text-to-speech",
+                "classpath": "com.getcapacitor.community.tts.TextToSpeechPlugin"
+        },
+        {
+                "pkg": "blue-heart-guys-sherpa-tts",
+                "classpath": "com.blueheartguys.journeys.tts.SherpaTtsPlugin"
+        }
+]

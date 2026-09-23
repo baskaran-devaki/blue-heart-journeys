@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Blue Heart Guys</string>
+    <string name="title_activity_main">Blue Heart Guys</string>
+    <string name="package_name">com.blueheartguys.journeys</string>
+    <string name="custom_url_scheme">com.blueheartguys.journeys</string>
+</resources>

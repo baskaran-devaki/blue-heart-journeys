@@ -12,8 +12,11 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@ai-sdk/groq": "^4.0.46",
     "@ai-sdk/openai": "^4.0.66",
     "@ai-sdk/react": "^4.0.102",
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.5.2",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -79,6 +82,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@eslint/js": "^9.32.0",
     "@lovable.dev/vite-tanstack-config": "^2.15.0",
     "@types/node": "^22.16.5",

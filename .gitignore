@@ -38,3 +38,11 @@ android/app/build/
 android/capacitor-cordova-android-plugins/build/
 android/.idea/
 android/local.properties
+
+# Local Android incomplete backup
+android-incomplete-backup/
+*.voice-debug-backup
+
+# Android generated test sources
+android/app/src/androidTest/
+android/app/src/test/
